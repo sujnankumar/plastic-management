@@ -16,7 +16,7 @@ const SignIn = () => {
         if (response.status === 200) {
             console.log("Message:", response.data.message); 
             localStorage.setItem("access_token", response.data.access_token);
-            navigate("/home");
+            navigate("/profile");
         } else {
             console.log("Message:", response.data.message); 
             alert(data.message);
