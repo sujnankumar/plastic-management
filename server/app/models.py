@@ -38,25 +38,37 @@ class RoleToken(db.Model):
 class Buyer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    business_name = db.Column(db.String(50), nullable=False)
+    business_phno = db.Column(db.String(15), nullable=False)
+    business_address = db.Column(db.String(150), nullable=False)
     buy_id = db.Column(db.Integer, nullable=False)
     user = db.relationship('User', backref=db.backref('buyers', lazy=True))
 
 class Retailer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    sell_id = db.Column(db.Integer, nullable=False)
+    business_name = db.Column(db.String(50), nullable=False)
+    business_phno = db.Column(db.String(15), nullable=False)
+    business_address = db.Column(db.String(150), nullable=False)
+    retailer_id = db.Column(db.Integer, nullable=False)
     user = db.relationship('User', backref=db.backref('retailers', lazy=True))
 
 class Manufacturer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    buy_id = db.Column(db.Integer, nullable=False)
+    business_name = db.Column(db.String(50), nullable=False)
+    business_phno = db.Column(db.String(15), nullable=False)
+    business_address = db.Column(db.String(150), nullable=False)
+    manufacturer_id = db.Column(db.Integer, nullable=False)
     user = db.relationship('User', backref=db.backref('manufacturers', lazy=True))
 
 class Recycler(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    sell_id = db.Column(db.Integer, nullable=False)
+    business_name = db.Column(db.String(50), nullable=False)
+    business_phno = db.Column(db.String(15), nullable=False)
+    business_address = db.Column(db.String(150), nullable=False)
+    recycler_id = db.Column(db.Integer, nullable=False)
     user = db.relationship('User', backref=db.backref('recyclers', lazy=True))
 
 @login_manager.user_loader

@@ -1,15 +1,18 @@
 from flask import Blueprint, request, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import app, db
 from app.models import User, UserRoleRequest, RoleToken, PlasticItem
-import jwt
-from datetime import datetime, timedelta, timezone
 import secrets
+from datetime import datetime, timedelta, timezone
+
+app.config['JWT_SECRET_KEY'] = 'your_secret_key'
+jwt = JWTManager(app)
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
-@app.route('/signup', methods=['POST'])
+@bp.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
     username = data.get('username')
@@ -44,7 +47,7 @@ def signup():
 
     return jsonify({'message': 'User created successfully'}), 201
 
-@app.route('/signin', methods=['POST'])
+@bp.route('/signin', methods=['POST'])
 def signin():
     data = request.get_json()
     username = data.get('username')
@@ -55,40 +58,21 @@ def signin():
     if not user or not check_password_hash(user.password, password):
         return jsonify({'message': 'Invalid username or password'}), 401
 
-    token = jwt.encode({'username': user.username, 'exp': datetime.now(timezone.utc) + timedelta(hours=1)}, app.config['SECRET_KEY'])
-    print("Token: ",token)
+    token = create_access_token(identity=user.username)
     return jsonify({'message': 'Logged in successfully', 'access_token': token}), 200
 
-@app.route('/user')
+@bp.route('/user')
+@jwt_required()
 def get_user_data():
-    token = request.headers.get('Authorization')
-    print("Token:", token)
-    if not token:
-        return jsonify({'message': 'Missing token'}), 401
+    current_user_username = get_jwt_identity()
+    user = User.query.filter_by(username=current_user_username).first()
 
-    token_parts = token.split()
-    if len(token_parts) != 2 or token_parts[0].lower() != 'bearer':
-        return jsonify({'message': 'Invalid token format'}), 401
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
 
-    token = token_parts[1]
+    return jsonify({'username': user.username, 'email': user.email}), 200
 
-    try:
-        decoded_token = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-        username = decoded_token['username']
-
-        user = User.query.filter_by(username=username).first()
-
-        if not user:
-            return jsonify({'message': 'User not found'}), 404
-
-        return jsonify({'username': user.username, 'email': user.email}), 200
-
-    except jwt.ExpiredSignatureError:
-        return jsonify({'message': 'Token expired'}), 401
-    except jwt.InvalidTokenError:
-        return jsonify({'message': 'Invalid token'}), 401
-
-@app.route('/request_role', methods=['POST'])
+@bp.route('/request_role', methods=['POST'])
 @login_required
 def request_role():
     data = request.get_json()
@@ -102,7 +86,7 @@ def request_role():
     db.session.commit()
     return jsonify({'message': 'Role request submitted successfully'}), 201
 
-@app.route('/generate_role_token', methods=['POST'])
+@bp.route('/generate_role_token', methods=['POST'])
 @login_required
 def generate_role_token():
     if not current_user.is_admin:
@@ -123,7 +107,7 @@ def generate_role_token():
 
     return jsonify({'token': token, 'expires_at': expires_at}), 201
 
-@app.route('/validate_role_token', methods=['POST'])
+@bp.route('/validate_role_token', methods=['POST'])
 @login_required
 def validate_role_token():
     data = request.get_json()
@@ -140,7 +124,6 @@ def validate_role_token():
     return jsonify({'message': f'User role updated to {role_token.role}'}), 200
 
 @bp.route('/plastic_items', methods=['POST'])
-@jwt_required()
 def create_plastic_item():
     data = request.get_json()
     new_item = PlasticItem(name=data['name'], description=data['description'], collected_by=data['collected_by'])
@@ -148,7 +131,7 @@ def create_plastic_item():
     db.session.commit()
     return jsonify({'message': 'Plastic item created'}), 201
 
-@app.route('/logout')
+@bp.route('/logout')
 @login_required
 def logout():
     logout_user()
