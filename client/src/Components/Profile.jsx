@@ -36,8 +36,8 @@ const Profile = () => {
                                 <h1 className="text-gray-900 font-bold text-xl leading-8 my-1">
                                    {userData && (
                                         <>
-                                            <span>{userData.first_name} </span>
-                                            <span>{userData.last_name}</span>
+                                            <span>{userData.firstname} </span>
+                                            <span>{userData.lastname}</span>
                                         </>
                                     )}
                                 </h1>
@@ -51,7 +51,11 @@ const Profile = () => {
                                         <span>Points</span>
                                         <span className="ml-auto">
                                             <span className="bg-green-500 py-1 px-2 rounded text-white text-sm">
-                                                points
+                                                {userData && (
+                                                    <>
+                                                        <span>{userData.points} </span>
+                                                    </>
+                                                )}
                                             </span>
                                         </span>
                                     </li>
@@ -100,7 +104,7 @@ const Profile = () => {
                                             </div>
                                             <div className="px-4 py-2">
                                                 {userData && (
-                                                    <span>{userData.first_name}</span>
+                                                    <span>{userData.firstname}</span>
                                                 )}
                                             </div>
                                         </div>
@@ -110,7 +114,7 @@ const Profile = () => {
                                             </div>
                                             <div className="px-4 py-2">
                                                 {userData && (
-                                                    <span>{userData.last_name}</span>
+                                                    <span>{userData.lastname}</span>
                                                 )}
                                             </div>
                                         </div>
@@ -140,7 +144,7 @@ const Profile = () => {
                                             </div>
                                             <div className="px-4 py-2">
                                                 {userData && (
-                                                    <span>{userData.contact_no}</span>
+                                                    <span>{userData.contact}</span>
                                                 )}
                                             </div>
                                         </div>
@@ -156,16 +160,14 @@ const Profile = () => {
                                         </div>
                                         <div className="grid grid-cols-2">
                                             <div className="px-4 py-2 font-semibold">
-                                                Email.
+                                                Email
                                             </div>
                                             <div className="px-4 py-2">
                                                 <a
-                                                    className="text-blue-800"
-                                                    href="mailto:manik@gmail.com"
+                                                className="text-blue-800"
+                                                href={`mailto:${userData ? userData.email : ''}`}
                                                 >
-                                                    {userData && (
-                                                        <span>{userData.email}</span>
-                                                    )}
+                                                    {userData && <span>{userData.email}</span>}
                                                 </a>
                                             </div>
                                         </div>

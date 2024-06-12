@@ -5,6 +5,12 @@ const SignUp = () => {
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [firstname, setFirstName] = useState("");
+    const [lastname, setLastName] = useState("");
+    const [contact, setContact] = useState("");
+    const [gender, setGender] = useState("");
+    const [address, setAddress] = useState("");
+    const [dob, setDob] = useState("");
     const navigate = useNavigate();
 
     const handleSignup = async () => {
@@ -13,7 +19,7 @@ const SignUp = () => {
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ username, email, password, role: "user" }),
+            body: JSON.stringify({ username, email, password, firstname, lastname, contact, gender, address, dob, role: "user" }),
         });
 
         if (response.ok) {
@@ -76,6 +82,102 @@ const SignUp = () => {
                             className="w-full px-3 py-2 border rounded-md dark:border-gray-300 dark:bg-gray-50 dark:text-gray-800"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <div className="flex justify-between mb-2">
+                            <label htmlFor="firstname" className="text-sm">
+                                Enter First Name
+                            </label>
+                        </div>
+                        <input
+                            type="firstname"
+                            name="firstname"
+                            id="firstname"
+                            placeholder="Leroy"
+                            className="w-full px-3 py-2 border rounded-md dark:border-gray-300 dark:bg-gray-50 dark:text-gray-800"
+                            value={firstname}
+                            onChange={(e) => setFirstName(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <div className="flex justify-between mb-2">
+                            <label htmlFor="lastname" className="text-sm">
+                                Enter Last Name
+                            </label>
+                        </div>
+                        <input
+                            type="lastname"
+                            name="lastname"
+                            id="lastname"
+                            placeholder="Jenkins"
+                            className="w-full px-3 py-2 border rounded-md dark:border-gray-300 dark:bg-gray-50 dark:text-gray-800"
+                            value={lastname}
+                            onChange={(e) => setLastName(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <div className="flex justify-between mb-2">
+                            <label htmlFor="contact" className="text-sm">
+                                Enter Contact
+                            </label>
+                        </div>
+                        <input
+                            type="contact"
+                            name="contact"
+                            id="contact"
+                            placeholder="1234567890"
+                            className="w-full px-3 py-2 border rounded-md dark:border-gray-300 dark:bg-gray-50 dark:text-gray-800"
+                            value={contact}
+                            onChange={(e) => setContact(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <div className="flex justify-between mb-2">
+                            <label htmlFor="gender" className="text-sm">
+                                Enter Gender
+                            </label>
+                        </div>
+                        <input
+                            type="gender"
+                            name="gender"
+                            id="gender"
+                            placeholder="M"
+                            className="w-full px-3 py-2 border rounded-md dark:border-gray-300 dark:bg-gray-50 dark:text-gray-800"
+                            value={gender}
+                            onChange={(e) => setGender(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <div className="flex justify-between mb-2">
+                            <label htmlFor="address" className="text-sm">
+                                Enter Address
+                            </label>
+                        </div>
+                        <input
+                            type="address"
+                            name="address"
+                            id="address"
+                            placeholder="89 Rai Street"
+                            className="w-full px-3 py-2 border rounded-md dark:border-gray-300 dark:bg-gray-50 dark:text-gray-800"
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <div className="flex justify-between mb-2">
+                            <label htmlFor="dob" className="text-sm">
+                                Enter Date of Birth
+                            </label>
+                        </div>
+                        <input
+                            type="dob"
+                            name="dob"
+                            id="dob"
+                            placeholder="01-01-2001"
+                            className="w-full px-3 py-2 border rounded-md dark:border-gray-300 dark:bg-gray-50 dark:text-gray-800"
+                            value={dob}
+                            onChange={(e) => setDob(e.target.value)}
                         />
                     </div>
                 </div>
