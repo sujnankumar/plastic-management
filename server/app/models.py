@@ -33,9 +33,6 @@ class UserRoleRequest(db.Model):
 class Buyer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    business_name = db.Column(db.String(50), nullable=False)
-    business_contact = db.Column(db.String(15), nullable=False)
-    business_address = db.Column(db.String(150), nullable=False)
     user = db.relationship('User', backref=db.backref('buyers', lazy=True))
 
 class Retailer(db.Model):
@@ -61,6 +58,25 @@ class Recycler(db.Model):
     business_contact = db.Column(db.String(15), nullable=False)
     business_address = db.Column(db.String(150), nullable=False)
     user = db.relationship('User', backref=db.backref('recyclers', lazy=True))
+
+class Plastic(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    manufacturer_id = db.Column(db.Integer, db.ForeignKey('manufacturer.id'), nullable=False)
+    recycler_id = db.Column(db.Integer, db.ForeignKey('recycler.id'), nullable=True)
+    manufactured_date = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    retailers = db.relationship('PlasticRetailer', backref='plastic', lazy=True)
+    status = db.Column(db.String(20), default="manufacturer")
+    buyers = db.relationship('PlasticBuyer', backref='plastic', lazy=True)
+
+class PlasticRetailer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    plastic_id = db.Column(db.Integer, db.ForeignKey('plastic.id'), nullable=False)
+    retailer_id = db.Column(db.Integer, db.ForeignKey('retailer.id'), nullable=False)
+
+class PlasticBuyer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    plastic_id = db.Column(db.Integer, db.ForeignKey('plastic.id'), nullable=False)
+    buyer_id = db.Column(db.Integer, db.ForeignKey('buyer.id'), nullable=False)
 
 @login_manager.user_loader
 def load_user(user_id):

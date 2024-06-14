@@ -7,7 +7,6 @@ from datetime import datetime
 def create_admin_user():
     admin = User.query.filter_by(username='admin').first()
     hashed_pass = generate_password_hash('pass', method='scrypt')
-    print(hashed_pass)
     if not admin:
         admin = User(
             username='admin',

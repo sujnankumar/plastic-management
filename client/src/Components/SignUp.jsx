@@ -31,6 +31,8 @@ const SignUp = () => {
     };
 
     return (
+        <div className="min-h-screen flex justify-center items-center bg-[#9fdfc5]">
+
         <div className="w-full max-w-md p-8 space-y-3 rounded-xl bg-gray-50 text-gray-800">
             <div className="mb-8 text-center">
                 <h1 className="my-3 text-4xl font-bold">Sign Up</h1>
@@ -204,6 +206,7 @@ const SignUp = () => {
                     </p>
                 </div>
             </form>
+        </div>
         </div>
     );
 };
