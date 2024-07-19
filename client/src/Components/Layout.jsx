@@ -3,7 +3,7 @@ import Navbar from './Navbar'; // Assuming you have a Navbar component
 
 const Layout = ({ children, user }) => {
     return (
-        <div className="w-full h-screen flex flex-col">
+        <div className="w-full h-screen flex flex-col font-[Playfair-display]">
             <Navbar isAdmin={user && user.role === 'admin'} />
             <div className="flex flex-grow mt-16">
                 <aside className="w-64 bg-gray-200 p-4"> {/* Adjust width as needed */}
