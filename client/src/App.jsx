@@ -108,7 +108,7 @@ function App() {
     
 
     return (
-        <div className="min-h-screen flex justify-center items-center bg-[#9fdfc5] bg-cover">
+        <div className="min-h-screen flex justify-center items-center bg-[#d1d1d1] bg-cover">
             <Layout user={user}>
                 <Routes>
                     {/* Public routes */}
