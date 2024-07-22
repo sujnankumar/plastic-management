@@ -78,6 +78,22 @@ class PlasticBuyer(db.Model):
     plastic_id = db.Column(db.Integer, db.ForeignKey('plastic.id'), nullable=False)
     buyer_id = db.Column(db.Integer, db.ForeignKey('buyer.id'), nullable=False)
 
+class Transaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    plastic_id = db.Column(db.Integer, db.ForeignKey('plastic.id'), nullable=True)
+    manufacturer_id = db.Column(db.Integer, db.ForeignKey('manufacturer.id'), nullable=True)
+    retailer_id = db.Column(db.Integer, db.ForeignKey('retailer.id'), nullable=True)
+    recycler_id = db.Column(db.Integer, db.ForeignKey('recycler.id'), nullable=True)
+    log = db.Column(db.String(200), nullable=False)
+    points = db.Column(db.Integer, default=0)  # Add points column
+    date = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+
+class Points(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    transaction_type = db.Column(db.String(50), unique=True, nullable=False)
+    points_value = db.Column(db.Integer, nullable=False)
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))

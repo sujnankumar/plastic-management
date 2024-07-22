@@ -42,7 +42,7 @@ const PlasticsPage = () => {
     return (
         <div className="container mx-auto p-4">
             <h1 className="text-2xl font-bold mb-4">Plastics Created by Manufacturer</h1>
-            {manufacturer && (
+            {manufacturer ? (
                 <div className="mb-4">
                     <h2 className="text-xl font-bold">Manufacturer Details</h2>
                     <p>ID: {manufacturer.id}</p>
@@ -50,14 +50,20 @@ const PlasticsPage = () => {
                     <p>Contact: {manufacturer.business_contact}</p>
                     <p>Address: {manufacturer.business_address}</p>
                 </div>
+            ) : (
+                <p>Loading manufacturer details...</p>
             )}
             <div>
-                {plastics.map(plastic => (
-                    <div key={plastic.id} className="border p-4 mb-4">
-                        <p>ID: {plastic.id}</p>
-                        <p>Manufactured Date: {new Date(plastic.manufactured_date).toLocaleString()}</p>
-                    </div>
-                ))}
+                {plastics.length > 0 ? (
+                    plastics.map(plastic => (
+                        <div key={plastic.id} className="border p-4 mb-4">
+                            <p>ID: {plastic.id}</p>
+                            <p>Manufactured Date: {new Date(plastic.manufactured_date).toLocaleString()}</p>
+                        </div>
+                    ))
+                ) : (
+                    <p>No plastics available or loading...</p>
+                )}
             </div>
         </div>
     );

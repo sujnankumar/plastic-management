@@ -5,30 +5,44 @@ import axios from "../axios"; // Import Axios
 const SignIn = () => {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false); // Loading state
+    const [error, setError] = useState(""); // Error state
     const navigate = useNavigate();
 
     const handleSignin = async () => {
-        const response = await axios.post("http://localhost:5000/api/signin", {
-            username,
-            password
-        });
-        console.log(response);
-        if (response.status === 200) {
-            console.log("Message:", response.data.message); 
-            localStorage.setItem("access_token", response.data.access_token);
-            navigate("/profile");
-        } else {
-            console.log("Message:", response.data.message); 
-            alert(data.message);
+        if (!username || !password) {
+            setError("Please enter both username and password");
+            return;
+        }
+
+        setLoading(true);
+        setError("");
+        
+        try {
+            const response = await axios.post("/api/signin", { // Corrected URL
+                username,
+                password
+            });
+            
+            if (response.status === 200) {
+                localStorage.setItem("access_token", response.data.access_token);
+                navigate("/profile");
+            } else {
+                setError(response.data.message);
+            }
+        } catch (error) {
+            console.error("Error during sign-in:", error);
+            setError("An error occurred during sign-in. Please try again.");
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
         <div className="min-h-screen flex justify-center items-center bg-[#9fdfc5]">
-
             <div className="w-full max-w-md p-8 space-y-3 rounded-xl bg-gray-50 text-gray-800">
                 <h1 className="my-3 text-4xl font-bold text-center">Login</h1>
-                <form noValidate="" className="space-y-6" onSubmit={e => e.preventDefault()}>
+                <form noValidate className="space-y-6" onSubmit={e => e.preventDefault()}>
                     <div className="space-y-1 text-sm">
                         <label htmlFor="username" className="block text-gray-600">
                             Username
@@ -62,11 +76,13 @@ const SignIn = () => {
                             </a>
                         </div>
                     </div>
+                    {error && <p className="text-red-600 text-sm">{error}</p>}
                     <button
                         className="block w-full p-3 text-center rounded-sm text-gray-50 bg-[#2b654f]"
                         onClick={handleSignin}
+                        disabled={loading}
                     >
-                        Sign in
+                        {loading ? "Signing in..." : "Sign in"}
                     </button>
                 </form>
                 <div className="flex items-center pt-4 space-x-1">
@@ -125,7 +141,7 @@ const SignIn = () => {
                     </Link>
                 </p>
             </div>
-        </div>  
+        </div>
     );
 };
 

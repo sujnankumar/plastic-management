@@ -22,4 +22,18 @@ axiosInstance.interceptors.request.use(
   }
 );
 
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      if (window.location.href !== 'http://localhost:5173/signin') {
+        window.location.href = '/signin';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default axiosInstance;

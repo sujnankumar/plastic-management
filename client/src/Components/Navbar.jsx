@@ -19,7 +19,7 @@ const Navbar = ({ isAdmin }) => {
 
   return (
         <>
-        <nav class="fixed top-0 z-50 w-full bg-[#A1BE9F] border-b-2 border-[#696969] text-gray-800">
+        <nav class="fixed top-0 z-50 w-full bg-[#C0EDBD] border-b-2 border-[#696969] text-gray-800">
         <div class="px-3 py-4 lg:px-14">
             <div class="flex items-center justify-between">
             <div class="flex items-center justify-start rtl:justify-end">
@@ -69,7 +69,7 @@ const Navbar = ({ isAdmin }) => {
         </div>
         </nav>
 
-        <aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-transform -translate-x-full sm:translate-x-0 bg-[#A1BE9F]" aria-label="Sidebar">
+        <aside id="logo-sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-transform -translate-x-full sm:translate-x-0 bg-[#C0EDBD]" aria-label="Sidebar">
         <div class="h-full px-3 pb-4 overflow-y-auto">
             <ul class="space-y-2 font-medium">
                 <li>
