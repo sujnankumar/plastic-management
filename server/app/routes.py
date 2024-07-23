@@ -271,50 +271,64 @@ def create_plastic():
     data = request.get_json()
     current_user_username = get_jwt_identity()
     user = User.query.filter_by(username=current_user_username).first()
+    
     manufacturer_id = data.get('manufacturerId')
+    plastic_type = data.get('type')
+    cost = data.get('cost')
+    quantity = data.get('quantity', 1)
 
     if not manufacturer_id:
         return jsonify({'error': 'Manufacturer ID is required'}), 400
 
     try:
-        # Create new plastic
-        new_plastic = Plastic(manufacturer_id=manufacturer_id)
-        db.session.add(new_plastic)
-        db.session.commit()
-
-        # Retrieve points for creating a plastic
         points_action = Points.query.filter_by(transaction_type='create').first()
         points_awarded = points_action.points_value if points_action else 0
-        print(points_awarded)
+        print(str(plastic_type))
+
+        if str(plastic_type) == '2': points_awarded = points_awarded * 2
+
+        new_plastics = []
+        for _ in range(quantity):
+            new_plastic = Plastic(
+                manufacturer_id=manufacturer_id,
+                type=plastic_type,
+                cost=cost
+            )
+            db.session.add(new_plastic)
+            new_plastics.append(new_plastic)
+
+        db.session.commit()
+
         user.points += points_awarded
         db.session.commit()
 
-        # Create a transaction record
-        current_user_username = get_jwt_identity()
-        user = User.query.filter_by(username=current_user_username).first()
+        for plastic in new_plastics:
+            new_transaction = Transaction(
+                user_id=user.id,
+                plastic_id=plastic.id,
+                manufacturer_id=manufacturer_id,
+                log=f'Created new Plastic (ID: {plastic.id}) - Type: '+str(plastic_type),
+                points=points_awarded
+            )
+            db.session.add(new_transaction)
 
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-
-        new_transaction = Transaction(
-            user_id=user.id,
-            plastic_id=new_plastic.id,
-            manufacturer_id=manufacturer_id,
-            log='Created new Plastic (ID: ' +str(new_plastic.id)+')',
-            points=points_awarded
-        )
-        db.session.add(new_transaction)
         db.session.commit()
 
-        return jsonify({
-            'id': new_plastic.id,
-            'manufactured_date': new_plastic.manufactured_date.isoformat(),
-            'points_awarded': points_awarded
-        }), 201
+        plastics_data = [
+            {
+                'id': plastic.id,
+                'manufactured_date': plastic.manufactured_date.isoformat(),
+                'points_awarded': points_awarded
+            }
+            for plastic in new_plastics
+        ]
+
+        return jsonify(plastics_data), 201
 
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/manufacturer_plastics/<int:manufacturer_id>', methods=['GET'])
 @jwt_required()
@@ -323,11 +337,23 @@ def manufacturer_plastics(manufacturer_id):
         current_user_username = get_jwt_identity()
         user = User.query.filter_by(username=current_user_username).first()
         manufacturer = Manufacturer.query.filter_by(user_id=user.id).first()
+
+        if not manufacturer or manufacturer.id != manufacturer_id:
+            return jsonify({'error': 'Unauthorized or Manufacturer ID mismatch'}), 403
+
         plastics = Plastic.query.filter_by(manufacturer_id=manufacturer.id, status='manufacturer').order_by(Plastic.manufactured_date.desc()).all()
-        print(manufacturer_id)
-        plastics_data = [{'id': plastic.id, 'manufactured_date': plastic.manufactured_date} for plastic in plastics]
-        print(plastics_data)
+        plastics_data = [
+            {
+                'id': plastic.id,
+                'manufactured_date': plastic.manufactured_date.isoformat(),
+                'type': plastic.type,
+                'cost': plastic.cost
+            }
+            for plastic in plastics
+        ]
+
         return jsonify(plastics_data), 200
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -627,15 +653,12 @@ def transfer_plastic_to_recycler(plastic_id, recycler_id):
         current_user_username = get_jwt_identity()
         user = User.query.filter_by(username=current_user_username).first()
 
-        # Update plastic status
         plastic.status = 'recycler'
         db.session.commit()
 
-        # Points for retailer to recycler
         points_action = Points.query.filter_by(transaction_type='retailer_to_recycler').first()
         points_awarded = points_action.points_value if points_action else 0
 
-        # Create a transaction record
         new_transaction = Transaction(
             user_id=user.id,
             plastic_id=plastic.id,
