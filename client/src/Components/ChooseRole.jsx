@@ -1,10 +1,19 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from "react";
 import axios from '../axios';
 
 const roles = [
-  { name: 'Manufacturer', gradient: 'bg-gradient-to-r from-blue-400 to-blue-600' },
-  { name: 'Retailer', gradient: 'bg-gradient-to-r from-green-400 to-green-600' },
-  { name: 'Recycler', gradient: 'bg-gradient-to-r from-pink-400 to-pink-600' },
+  { name: 'Manufacturer', 
+    gradient: 'bg-gradient-to-r from-blue-400 to-blue-600',
+    bgimg: 'https://miro.medium.com/v2/resize:fit:771/1*St_GyNH11Hb0e4pz8Oec5A.png',
+    fgimg: 'https://www.svgrepo.com/show/484043/person-button.svg'},
+  { name: 'Retailer', 
+    gradient: 'bg-gradient-to-r from-green-400 to-green-600',
+    bgimg: 'https://vegavid.com/blog/wp-content/uploads/2023/07/How-Green-AI-is-Revolutionizing-Technology-for-a-Sustainable-Future.jpg',
+    fgimg: 'https://www.svgrepo.com/show/484043/person-button.svg' },
+  { name: 'Recycler', 
+    gradient: 'bg-gradient-to-r from-pink-400 to-pink-600',
+    bgimg: 'https://waste-management-world.com/imager/media/wasteManagementWorld/3820706/AdobeStock_571968683_428fd902f4247199467725e7eccf1673.jpeg' ,
+    fgimg: 'https://www.svgrepo.com/show/484043/person-button.svg'},
 ];
 
 const ChooseRole = () => {
@@ -12,6 +21,8 @@ const ChooseRole = () => {
   const [contactNumber, setContactNumber] = useState('');
   const [address, setAddress] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
+  const [currentRole, setCurrentRole] = useState('');
+  // const [userData, setUserData] = useState(null);
 
   const handleRoleClick = (role) => {
     setSelectedRole(role);
@@ -40,11 +51,26 @@ const ChooseRole = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchUserData = async () => {
+        try {
+            const response = await axios.get("/api/user");
+            // setUserData(response.data);
+            // setUserId(response.data.id); // Assume user ID is in the response
+            setCurrentRole(response.data.role);
+            console.log(response.data.role);
+        } catch (error) {
+            console.error("Error fetching user data:", error);
+        }
+    };
+
+    fetchUserData();
+  }, []);
 
   return (
-    <div className="flex flex-col items-center min-h-screen bg-gray-100 p-6 rounded-xl text-gray-800 w-full">
+     <div className="flex flex-col items-center min-h-screen bg-gray-100 p-6 rounded-xl text-gray-800 w-full">
       <header className="w-full max-w-4xl bg-white p-6 rounded-lg shadow-md mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Choose Your Role</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">Choose Your Role (Currently: {currentRole})</h1> 
         <p className="text-gray-600">Select a role and provide your business information to get started.</p>
       </header>
 
@@ -100,10 +126,22 @@ const ChooseRole = () => {
               ${role.gradient} 
               ${selectedRole === role.name ? 'transform scale-95 border-4 border-yellow-500' : 'hover:scale-105'}
             `}
+            style={{
+              backgroundImage: `url(${role.bgimg})`,  // Use role.svg directly inside the template literal
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              color: 'pink',
+            }}
           >
-            <div className="rounded-full h-16 w-16 bg-white bg-opacity-25 mb-4 flex justify-center items-center">
-              {/* Add an icon or initials here if desired */}
-            </div>
+            <div className="rounded-full h-16 w-16 bg-white bg-opacity-25 mb-4 flex justify-center items-center"
+            style={{
+              backgroundImage: `url(${role.fgimg})`,  // Use role.svg directly inside the template literal
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              
+            }}      
+            > </div>
+                
             <div>{role.name}</div>
           </div>
         ))}

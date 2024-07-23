@@ -817,3 +817,23 @@ def get_user_plastics():
         })
 
     return jsonify(results)
+
+@app.route('/api/points/<int:user_id>', methods=['PUT'])
+def update_user_points(user_id):
+    data = request.json
+    points = data.get('points')
+
+    if points < 0:
+        return jsonify({'message': 'Points value is required'}), 400
+
+    user = User.query.filter_by(id=user_id).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    try:
+        user.points = points
+        db.session.commit()
+        return jsonify({'message': f'User points updated successfully to {points}'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Failed to update points: {str(e)}'}), 500

@@ -63,11 +63,14 @@ class Plastic(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     manufacturer_id = db.Column(db.Integer, db.ForeignKey('manufacturer.id'), nullable=False)
     recycler_id = db.Column(db.Integer, db.ForeignKey('recycler.id'), nullable=True)
-    manufactured_date = db.Column(db.DateTime, default=datetime.now(timezone.utc))
-    retailers = db.relationship('PlasticRetailer', backref='plastic', lazy=True)
-    status = db.Column(db.String(20), default="manufacturer")
-    buyers = db.relationship('PlasticBuyer', backref='plastic', lazy=True)
-
+    manufactured_date = db.Column(db.DateTime, default=datetime.now(timezone.utc), nullable=False)
+    retailers = db.relationship('PlasticRetailer', backref='plastic', lazy='dynamic')
+    status = db.Column(db.String(20), default="manufacturer", nullable=False)
+    buyers = db.relationship('PlasticBuyer', backref='plastic', lazy='dynamic')
+    transaction_id = db.Column(db.Integer, db.ForeignKey('transaction.id'), nullable=True)  # Changed to transaction_id
+    type = db.Column(db.Integer, nullable=False)
+    cost = db.Column(db.Integer, nullable=False)
+    
 class PlasticRetailer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     plastic_id = db.Column(db.Integer, db.ForeignKey('plastic.id'), nullable=False)
@@ -85,14 +88,29 @@ class Transaction(db.Model):
     manufacturer_id = db.Column(db.Integer, db.ForeignKey('manufacturer.id'), nullable=True)
     retailer_id = db.Column(db.Integer, db.ForeignKey('retailer.id'), nullable=True)
     recycler_id = db.Column(db.Integer, db.ForeignKey('recycler.id'), nullable=True)
+    buyer_id = db.Column(db.Integer, db.ForeignKey('buyer.id'), nullable=True)
     log = db.Column(db.String(200), nullable=False)
-    points = db.Column(db.Integer, default=0)  # Add points column
-    date = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    points = db.Column(db.Integer, default=0)
+    date = db.Column(db.DateTime, default=datetime.now(timezone.utc), nullable=False)
 
 class Points(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     transaction_type = db.Column(db.String(50), unique=True, nullable=False)
     points_value = db.Column(db.Integer, nullable=False)
+
+class Article(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(50), unique=True, nullable=False)
+    description = db.Column(db.String(5000), nullable=False)
+    date = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+
+class Rewards(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(50), unique=True, nullable=False)
+    description = db.Column(db.String(5000), nullable=False)
+    date = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    image_url = db.Column(db.String(100), nullable=True)
+    type = db.Column(db.Integer)
 
 @login_manager.user_loader
 def load_user(user_id):

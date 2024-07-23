@@ -1,8 +1,10 @@
 import React from "react";
+import { useEffect, useState } from "react";
 import { FaLeaf, FaCoins, FaGift } from "react-icons/fa";
-const availablePoints = 250;
+import { FaTrophy, FaShoppingCart, FaQuestionCircle } from "react-icons/fa";
+import axios from "../axios";
 
-const rewards = [
+const mainrewards = [
     {
         title: "10% Off on Next Purchase",
         image: "https://www.shutterstock.com/image-vector/sale-special-offer-10-off-260nw-572209672.jpg",
@@ -29,9 +31,9 @@ const rewards = [
         rewardPoints: 500,
     },
 ];
-import { FaTrophy, FaShoppingCart, FaQuestionCircle } from "react-icons/fa";
 
-const rewards2 = [
+
+const subrewards = [
     {
         id: 1,
         title: "Daily Set",
@@ -62,6 +64,56 @@ const rewards2 = [
     },
 ];
 const Rewards = () => {
+    const [userData, setUserData] = useState(null);
+    // const [transactions, setTransactions] = useState([]);
+    // const [userId, setUserId] = useState(null); // Add this if user ID is not already available
+    const [availablePoints, setAvailablePoints] = useState(0);
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const response = await axios.get("/api/user");
+                setUserData(response.data);
+                setAvailablePoints(response.data.points);
+                
+            } catch (error) {
+                console.error("Error fetching user data:", error);
+            }
+        };
+
+        fetchUserData();
+    }, []);
+
+    const redeemReward = async (reward) => {
+        const requiredPoints = reward.rewardPoints;
+
+        if (availablePoints >= requiredPoints) {
+            try {
+                const updatedPoints = availablePoints - requiredPoints;
+
+                // Update points in backend
+                const response = await axios.put(`/api/points/${userData.id}`, {
+                    points: updatedPoints,
+                });
+
+                // Handle response based on your application's needs
+                console.log(response.data);
+
+                // Update local state or fetch user data again if necessary
+                setAvailablePoints(updatedPoints);
+
+                alert(`Reward "${reward.title}" redeemed successfully!`);
+            } catch (error) {
+                console.error("Error redeeming reward:", error);
+                alert("Failed to redeem reward. Please try again later.");
+            }
+        } else {
+            alert("Insufficient points to redeem this reward.");
+        }
+    };
+    
+    const bonusPoints = 120;
+
     return (
         <div className="w-full bg-gray-100 p-10">
             <div className="p-4">
@@ -72,7 +124,12 @@ const Rewards = () => {
                                 Good Morning
                             </span>
                             <h1 className="text-4xl font-bold ml-2 text-gray-800">
-                                Manik,
+                            {userData && (
+                                    <>
+                                        <span>{userData.firstname} </span>
+                                        <span>{userData.lastname}</span>
+                                    </>
+                                )},
                             </h1>
                         </header>
                         <main className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -83,7 +140,7 @@ const Rewards = () => {
                                         Available Points
                                     </h2>
                                     <p className="text-3xl font-bold text-green-500">
-                                        120
+                                        {availablePoints}
                                     </p>
                                     <button className="mt-4 bg-green-500 text-white font-bold py-2 px-4 rounded-md hover:bg-green-600 flex items-center justify-center">
                                         Redeem Points{" "}
@@ -98,7 +155,7 @@ const Rewards = () => {
                                         Points Earned Today
                                     </h2>
                                     <p className="text-3xl font-bold text-green-500">
-                                        120
+                                        {bonusPoints}
                                     </p>
                                     <button className="mt-4 bg-green-500 text-white font-bold py-2 px-4 rounded-md hover:bg-green-600 flex items-center justify-center">
                                         Bonuses
@@ -114,7 +171,7 @@ const Rewards = () => {
                             <h3 className="text-2xl font-semibold">Rewards</h3>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {rewards.map((reward, index) => {
+                            {mainrewards.map((reward, index) => {
                                 const requiredPoints = reward.rewardPoints;
                                 const canRedeem =
                                     availablePoints >= requiredPoints;
@@ -151,16 +208,15 @@ const Rewards = () => {
                                                 </div>
                                             )}
                                             <a
-                                                href={
-                                                    canRedeem ? "#" : "/redeem"
-                                                }
+                                                href="#"
+                                                onClick={() => redeemReward(reward)}
                                                 className={`block text-center py-2 px-4 rounded-lg ${
-                                                    canRedeem
+                                                    availablePoints >= reward.rewardPoints
                                                         ? "bg-green-500 hover:bg-green-600 text-white"
-                                                        : "bg-gray-300 text-gray-500"
+                                                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
                                                 }`}
                                             >
-                                                {canRedeem
+                                                {availablePoints >= reward.rewardPoints
                                                     ? "Redeem"
                                                     : "Insufficient Points"}
                                             </a>
@@ -176,7 +232,7 @@ const Rewards = () => {
                         <h3 className="text-2xl font-semibold">Bonuses</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-20 p-4">
-                        {rewards2.map((reward) => (
+                        {subrewards.map((reward) => (
                             <div
                                 key={reward.id}
                                 className="bg-white shadow-md rounded-md p-6 flex items-center cursor-pointer transform transition-transform hover:scale-105 hover:shadow-lg"
@@ -219,7 +275,7 @@ export default Rewards;
 //           </div>
 //         </div>
 //         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-//           {rewards.map((reward, index) => {
+//           {mainrewards.map((reward, index) => {
 //             const requiredPoints = reward.rewardPoints;
 //             const canRedeem = availablePoints >= requiredPoints;
 //             const progress = (availablePoints / requiredPoints) * 100;
