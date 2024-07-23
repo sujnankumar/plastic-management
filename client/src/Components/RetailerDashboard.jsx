@@ -1,14 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MdAddCircle, MdAttachMoney, MdReply } from 'react-icons/md';
-import axios from '../axios';  // Adjust the import path as per your project structure
+import axios from '../axios'; // Adjust the import path as per your project structure
 
 const RetailerDashboard = () => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [plasticId, setPlasticId] = useState('');
-  const [userId, setUserId] = useState('');
   const [retailerId, setRetailerId] = useState(null);
   const [plasticInventory, setPlasticInventory] = useState([]);
-  const symbolRef = useRef(null);
+  const [qrCode, setQrCode] = useState(null);
 
   useEffect(() => {
     const fetchRetailerId = async () => {
@@ -36,100 +33,24 @@ const RetailerDashboard = () => {
     }
   };
 
-  const handleAddToInventory = async () => {
-    try {
-      if (!plasticId) {
-        alert('Please enter a Plastic ID.');
-        return;
-      }
+  const handleGenerateQrCode = async () => {
+    if (!retailerId) return;
 
-      const response = await axios.post('http://localhost:5000/api/add_plastic_to_inventory', {
-        plastic_id: plasticId,
-        retailer_id: retailerId
+    try {
+      const response = await axios.get(`http://localhost:5000/api/generate_qr/${retailerId}`, {
+        responseType: 'blob', // Expect a binary response
       });
 
-      console.log(response.data.message);
-      setPlasticId('');
-      fetchPlasticInventory(retailerId);
+      const url = URL.createObjectURL(response.data);
+      setQrCode(url);
     } catch (error) {
-      console.error('Error adding to inventory:', error);
+      console.error('Error generating QR code:', error);
     }
-  };
-
-  const handleSell = async () => {
-    try {
-      if (!plasticId || !userId) {
-        alert('Please enter Plastic ID and User ID.');
-        return;
-      }
-
-      const response = await axios.post('http://localhost:5000/api/sell_plastic', {
-        plastic_id: plasticId,
-        user_id: userId
-      });
-
-      console.log(response.data.message);
-      setPlasticId('');
-      setUserId('');
-      fetchPlasticInventory(retailerId); // Refresh inventory after selling
-    } catch (error) {
-      console.error('Error selling plastic:', error);
-    }
-  };
-
-  const toggleExpand = () => {
-    setIsExpanded(prevExpanded => !prevExpanded);
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-8 w-full">
       <h1 className="text-2xl font-bold mb-8">Retailer Dashboard</h1>
-      <div className="relative">
-        <div
-          ref={symbolRef}
-          className="w-16 h-16 bg-blue-500 text-white flex items-center justify-center rounded-full cursor-pointer transition duration-300 transform hover:scale-110"
-          onClick={toggleExpand}
-        >
-          <MdAddCircle size={28} />
-        </div>
-        {isExpanded && (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center space-x-4 p-4 rounded-lg shadow-lg">
-            <input
-              type="text"
-              placeholder="Enter Plastic ID"
-              className="px-3 py-2 border rounded-md border-gray-300 focus:outline-none focus:border-blue-500"
-              value={plasticId}
-              onChange={(e) => setPlasticId(e.target.value)}
-            />
-            <input
-              type="text"
-              placeholder="Enter User ID"
-              className="px-3 py-2 border rounded-md border-gray-300 focus:outline-none focus:border-blue-500"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-            />
-            <button
-              className="flex items-center justify-center w-40 h-20 bg-green-500 text-white rounded-lg hover:bg-green-700 transition duration-300"
-              onClick={handleAddToInventory}
-            >
-              <MdAddCircle size={24} className="mr-2" />
-              Add to Inventory
-            </button>
-            <button
-              className="flex items-center justify-center w-40 h-20 bg-blue-500 text-white rounded-lg hover:bg-blue-700 transition duration-300"
-              onClick={handleSell}
-            >
-              <MdAttachMoney size={24} className="mr-2" />
-              Sell
-            </button>
-            <button className="flex items-center justify-center w-40 h-20 bg-red-500 text-white rounded-lg hover:bg-red-700 transition duration-300">
-              <MdReply size={24} className="mr-2" />
-              Take Back from User
-            </button>
-          </div>
-        )}
-      </div>
-
       <div className="mt-8">
         <h2 className="text-xl font-semibold mb-4">Plastic Inventory</h2>
         <ul className="space-y-2">
@@ -139,6 +60,20 @@ const RetailerDashboard = () => {
             </li>
           ))}
         </ul>
+      </div>
+      <div className="mt-8">
+        <button
+          onClick={handleGenerateQrCode}
+          className="bg-blue-500 text-white px-4 py-2 rounded-md shadow-md hover:bg-blue-600"
+        >
+          Generate QR Code
+        </button>
+        {qrCode && (
+          <div className="mt-4">
+            <h3 className="text-lg font-semibold">Your QR Code:</h3>
+            <img src={qrCode} alt="Retailer QR Code" className="mt-2 border rounded-md" />
+          </div>
+        )}
       </div>
     </div>
   );

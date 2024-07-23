@@ -9,6 +9,11 @@ const ManufacturerDashboard = () => {
     const [plastics, setPlastics] = useState([]);
     const [showPlastics, setShowPlastics] = useState(false);
 
+    // New state variables
+    const [plasticType, setPlasticType] = useState(1);
+    const [plasticCost, setPlasticCost] = useState('');
+    const [plasticQuantity, setPlasticQuantity] = useState(1);
+
     useEffect(() => {
         const fetchUserData = async () => {
             try {
@@ -41,10 +46,19 @@ const ManufacturerDashboard = () => {
         if (!manufacturer) return;
 
         try {
-            const response = await axiosInstance.post('/api/create_plastic', {
-                manufacturerId: manufacturer.id
+            // Create multiple plastics
+            for (let i = 0; i < plasticQuantity; i++) {
+                await axiosInstance.post('/api/create_plastic', {
+                    manufacturerId: manufacturer.id,
+                    type: plasticType,
+                    cost: plasticCost
+                });
+            }
+            setCreatedPlastic({
+                type: plasticType,
+                cost: plasticCost,
+                quantity: plasticQuantity
             });
-            setCreatedPlastic(response.data);
             setShowMessage(true);
 
             // Hide message after 5 seconds
@@ -52,7 +66,7 @@ const ManufacturerDashboard = () => {
                 setShowMessage(false);
             }, 5000);
         } catch (error) {
-            console.error('Error creating plastic:', error);
+            console.error('Error creating plastics:', error);
         }
     };
 
@@ -80,23 +94,56 @@ const ManufacturerDashboard = () => {
                     <p>Address: {manufacturer.business_address}</p>
                 </div>
             )}
-            <button
-                onClick={createPlastic}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
-            >
-                Add Plastic
-            </button>
+            <div className="mb-4">
+                <label className="block mb-2">
+                    Plastic Type:
+                    <select
+                        value={plasticType}
+                        onChange={(e) => setPlasticType(parseInt(e.target.value))}
+                        className="block w-full mt-1 border-gray-300 rounded-md"
+                    >
+                        <option value={1}>Type 1</option>
+                        <option value={2}>Type 2</option>
+                    </select>
+                </label>
+                <label className="block mb-2">
+                    Cost:
+                    <input
+                        type="number"
+                        value={plasticCost}
+                        onChange={(e) => setPlasticCost(e.target.value)}
+                        className="block w-full mt-1 border-gray-300 rounded-md"
+                    />
+                </label>
+                <label className="block mb-2">
+                    Quantity:
+                    <input
+                        type="number"
+                        value={plasticQuantity}
+                        onChange={(e) => setPlasticQuantity(parseInt(e.target.value))}
+                        min="1"
+                        className="block w-full mt-1 border-gray-300 rounded-md"
+                    />
+                </label>
+                <button
+                    onClick={createPlastic}
+                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
+                >
+                    Add Plastics
+                </button>
+            </div>
             <a
                 href='/manufacturer_plastics'
                 className="bg-green-500 mx-10 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
             >
-                View all Plastic
+                View all Plastics
             </a>
             {createdPlastic && showMessage && (
                 <div className="mt-4 transition-opacity duration-500 ease-in-out opacity-100">
-                    <h2 className="text-xl font-bold">Plastic Created</h2>
-                    <p>ID: {createdPlastic.id}</p>
-                    <p>Manufactured Date: {new Date(createdPlastic.manufactured_date).toLocaleString()}</p>
+                    <h2 className="text-xl font-bold">Plastics Created</h2>
+                    <p>Type: {createdPlastic.type}</p>
+                    <p>Cost: {createdPlastic.cost}</p>
+                    <p>Quantity: {createdPlastic.quantity}</p>
                 </div>
             )}
             {showPlastics && (
@@ -107,6 +154,8 @@ const ManufacturerDashboard = () => {
                             <li key={plastic.id} className="mb-2">
                                 <p>ID: {plastic.id}</p>
                                 <p>Manufactured Date: {new Date(plastic.manufactured_date).toLocaleString()}</p>
+                                <p>Type: {plastic.type}</p>
+                                <p>Cost: {plastic.cost}</p>
                             </li>
                         ))}
                     </ul>

@@ -66,7 +66,6 @@ def signin():
     username = data.get('username')
     password = data.get('password')
     user = User.query.filter_by(username=username).first()
-    print(generate_password_hash(password, method='scrypt'), user.username)
     
     if not user or not check_password_hash(user.password, password):
         return jsonify({'message': 'Invalid username or password'}), 401
@@ -79,7 +78,6 @@ def signin():
 def get_user_data():
     current_user_username = get_jwt_identity()
     user = User.query.filter_by(username=current_user_username).first()
-    print(user)
     if not user:
         return jsonify({'message': 'User not found'}), 404
 
@@ -98,7 +96,6 @@ def get_user_data():
         'date_joined': user.date_joined.strftime('%d-%m-%Y'),
         'role': user.role
     }
-    print("Role" + user.role)
     return jsonify(user_data), 200
 
 @app.route('/api/submit_business_info', methods=['POST'])
@@ -112,7 +109,6 @@ def request_role():
 
     data = request.get_json()
 
-    print(data)
     try:
         new_request = UserRoleRequest(user_id=user.id, role=data.get('role'), business_name=data.get('business_name'), business_contact=data.get('contact_number'), business_address=data.get('address'))
         db.session.add(new_request)
@@ -167,7 +163,6 @@ def get_business_submissions():
 def assign_role():
     data = request.json
     role = data.get('role').lower()
-    print(data)
     submission_id = data.get('submission_id')
 
     user_id = data.get('user_id')
@@ -176,10 +171,9 @@ def assign_role():
     if not submission:
         return jsonify({'message': 'Submission not found'}), 404
 
-    print(user)
     if role not in ['buyer', 'retailer', 'manufacturer', 'recycler']:
         return jsonify({'message': 'Invalid role'}), 400
-    print(role)
+
     submission_model = None
     if role == 'buyer':
         submission_model = Buyer
@@ -189,7 +183,6 @@ def assign_role():
         submission_model = Manufacturer
     elif role == 'recycler':
         submission_model = Recycler
-    print(submission, submission_model)
 
     user.role = role
     new_request = submission_model(     user_id = user_id,
@@ -283,7 +276,6 @@ def create_plastic():
     try:
         points_action = Points.query.filter_by(transaction_type='create').first()
         points_awarded = points_action.points_value if points_action else 0
-        print(str(plastic_type))
 
         if str(plastic_type) == '2': points_awarded = points_awarded * 2
 
@@ -336,12 +328,16 @@ def manufacturer_plastics(manufacturer_id):
     try:
         current_user_username = get_jwt_identity()
         user = User.query.filter_by(username=current_user_username).first()
+        
         manufacturer = Manufacturer.query.filter_by(user_id=user.id).first()
-
-        if not manufacturer or manufacturer.id != manufacturer_id:
+        
+        if not manufacturer or (manufacturer_id and manufacturer.id != int(manufacturer_id)):
             return jsonify({'error': 'Unauthorized or Manufacturer ID mismatch'}), 403
 
-        plastics = Plastic.query.filter_by(manufacturer_id=manufacturer.id, status='manufacturer').order_by(Plastic.manufactured_date.desc()).all()
+        query = Plastic.query.filter_by(manufacturer_id=manufacturer.id, status='manufacturer')
+
+        plastics = query.order_by(Plastic.manufactured_date.desc()).all()
+
         plastics_data = [
             {
                 'id': plastic.id,
@@ -375,7 +371,6 @@ def get_plastic_details():
 def get_retailer_id():
     current_user_username = get_jwt_identity()
     user = User.query.filter_by(username=current_user_username).first()
-    print(user)
     retailer = Retailer.query.filter_by(user_id=user.id).first()
     if not retailer:
         return jsonify({"message": "Retailer not found"}), 404
@@ -393,7 +388,7 @@ def get_plastic_inventory():
 
     try:
         inventory = PlasticRetailer.query.filter_by(retailer_id=retailer_id).all()
-        print(inventory)
+
         response = [
             {
                 'id': item.id,
@@ -401,7 +396,6 @@ def get_plastic_inventory():
             }
             for item in inventory
         ]
-        print(response)
         return jsonify(response), 200
     except Exception as e:
         return jsonify({"message": str(e)}), 500
@@ -495,18 +489,19 @@ def sell_plastic():
 @jwt_required()
 def transfer_plastic_to_retailer():
     data = request.get_json()
-    plastic_ids = data.get('plastic_ids')
+    type1_quantity = data.get('type1_quantity', 0)
+    type2_quantity = data.get('type2_quantity', 0)
     retailer_id = data.get('retailer_id')
 
     try:
-
-        if not plastic_ids or not retailer_id:
-            return jsonify({'error': 'Plastic IDs and retailer ID are required.'}), 400
+        if not retailer_id:
+            return jsonify({'error': 'Retailer ID is required.'}), 400
 
         retailer = Retailer.query.get_or_404(retailer_id)
         ret_user = User.query.get_or_404(retailer.user_id)
         current_user_username = get_jwt_identity()
         user = User.query.filter_by(username=current_user_username).first()
+        manufacturer = Manufacturer.query.filter_by(user_id=user.id).first()
 
         man_points_action = Points.query.filter_by(transaction_type='manufacturer_to_retailer').first()
         ret_points_action = Points.query.filter_by(transaction_type='retailer_from_manufacturer').first()
@@ -519,12 +514,14 @@ def transfer_plastic_to_retailer():
         man_transaction_records = []
         plastic_retailer_records = []
 
-        for plastic_id in plastic_ids:
-            plastic = Plastic.query.get_or_404(plastic_id)
+        type1_plastics = Plastic.query.filter_by(manufacturer_id=manufacturer.id, type=1, status='manufacturer').limit(type1_quantity).all()
+               
+        if len(type1_plastics) < type1_quantity:
+            return jsonify({'error': f'Not enough Type 1 plastics available. Requested: {type1_quantity}, Available: {len(type1_plastics)}'}), 400
 
+        for plastic in type1_plastics:
             if plastic.status == 'retailer':
                 continue
-
             plastic.status = 'retailer'
             plastic_retailer_records.append(PlasticRetailer(plastic_id=plastic.id, retailer_id=retailer.id))
 
@@ -532,28 +529,57 @@ def transfer_plastic_to_retailer():
                 user_id=user.id,
                 plastic_id=plastic.id,
                 retailer_id=retailer.id,
-                log='Plastic with ID ' + str(plastic.id) + ' transferred to retailer (ID: ' +str(retailer_id)+')',
+                log='Plastic with ID ' + str(plastic.id) + ' - Type: ' + str(1) + ' transferred to retailer (ID: ' +str(retailer_id)+')',
                 points=man_points_awarded
             ))
             
-
             transaction_records.append(Transaction(
                 user_id=ret_user.id,
                 plastic_id=plastic.id,
                 retailer_id=retailer_id,
-                log='Plastic with ID ' + str(plastic.id) + ' received from manufacturer (ID: ' +str(user.id)+')',
+                log='Plastic with ID ' + str(plastic.id) + ' - Type: ' + str(1) + ' received from manufacturer (ID: ' +str(user.id)+')',
                 points=ret_points_awarded
             ))
-            
+
             man_total_points_awarded += man_points_awarded
             ret_total_points_awarded += ret_points_awarded
-            
 
-        # Commit all at once
+        man_points_awarded = man_points_awarded * 2
+        ret_points_awarded = ret_points_awarded * 2
+        type2_plastics = Plastic.query.filter_by(manufacturer_id=manufacturer.id, type=2, status='manufacturer').limit(type2_quantity).all()
+        if len(type2_plastics) < type2_quantity:
+            return jsonify({'error': f'Not enough Type 2 plastics available. Requested: {type2_quantity}, Available: {len(type2_plastics)}'}), 400
+
+        for plastic in type2_plastics:
+            if plastic.status == 'retailer':
+                continue
+            plastic.status = 'retailer'
+            plastic_retailer_records.append(PlasticRetailer(plastic_id=plastic.id, retailer_id=retailer.id))
+
+            man_transaction_records.append(Transaction(
+                user_id=user.id,
+                plastic_id=plastic.id,
+                retailer_id=retailer.id,
+                log='Plastic with ID ' + str(plastic.id) + ' - Type: ' + str(2) + ' transferred to retailer (ID: ' +str(retailer_id)+')',
+                points=man_points_awarded
+            ))
+            
+            transaction_records.append(Transaction(
+                user_id=ret_user.id,
+                plastic_id=plastic.id,
+                retailer_id=retailer_id,
+                log='Plastic with ID ' + str(plastic.id) + ' - Type: ' + str(2) + ' received from manufacturer (ID: ' +str(user.id)+')',
+                points=ret_points_awarded
+            ))
+
+            man_total_points_awarded += man_points_awarded
+            ret_total_points_awarded += ret_points_awarded
+
+        print(type1_plastics, type2_plastics)
+
         user.points += man_total_points_awarded
         ret_user.points += ret_total_points_awarded
-        
-        db.session.commit()
+
         db.session.add_all(plastic_retailer_records)
         db.session.add_all(man_transaction_records)
         db.session.add_all(transaction_records)
@@ -567,8 +593,6 @@ def transfer_plastic_to_retailer():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
-
-
 
 @app.route('/api/transfer_plastic/<int:plastic_id>/to_buyer/<int:buyer_id>', methods=['POST'])
 @jwt_required()
@@ -694,7 +718,7 @@ def get_manufacturer_id():
 def retailer_inventory(retailer_id):
     try:
         retailer = Retailer.query.get_or_404(retailer_id)
-        print(retailer)
+
         inventory = PlasticRetailer.query.filter_by(retailer_id=retailer.id).all()
 
         inventory_data = [{
@@ -724,12 +748,10 @@ def get_transactions():
 @app.route('/api/plastics/for_retailer/<int:retailer_id>', methods=['GET'])
 @jwt_required()
 def get_plastics_for_retailer(retailer_id):
-    print("Retailer",retailer_id)
     current_user_username = get_jwt_identity()
     user = User.query.filter_by(username=current_user_username).first()
     
     plastics = Plastic.query.join(PlasticRetailer).filter(PlasticRetailer.retailer_id == retailer_id, Plastic.status == 'retailer').all()
-    print(plastics)
     return jsonify([{
         'id': p.id,
         'manufactured_date': p.manufactured_date.strftime('%Y-%m-%d %H:%M:%S')
