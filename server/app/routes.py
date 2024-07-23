@@ -1,12 +1,14 @@
-from flask import Blueprint, request, jsonify
-from flask_login import login_user, logout_user, login_required, current_user
+from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from sqlalchemy import func
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import app, db
 from app.models import User, Buyer, Retailer, Manufacturer, Recycler, UserRoleRequest, Plastic, PlasticRetailer, PlasticBuyer, Transaction, Points
-import secrets
 from datetime import datetime, timedelta, timezone
 from dateutil import parser
+import qrcode
+import qrcode
+import io
 
 app.config['JWT_SECRET_KEY'] = 'your_secret_key'
 jwt = JWTManager(app)
@@ -695,3 +697,123 @@ def get_transactions():
         'points': tx.points,
         'date': tx.date.strftime('%Y-%m-%d %H:%M:%S')
     } for tx in transactions])
+
+@app.route('/api/plastics/for_retailer/<int:retailer_id>', methods=['GET'])
+@jwt_required()
+def get_plastics_for_retailer(retailer_id):
+    print("Retailer",retailer_id)
+    current_user_username = get_jwt_identity()
+    user = User.query.filter_by(username=current_user_username).first()
+    
+    plastics = Plastic.query.join(PlasticRetailer).filter(PlasticRetailer.retailer_id == retailer_id, Plastic.status == 'retailer').all()
+    print(plastics)
+    return jsonify([{
+        'id': p.id,
+        'manufactured_date': p.manufactured_date.strftime('%Y-%m-%d %H:%M:%S')
+    } for p in plastics])
+
+@app.route('/api/buy_plastic', methods=['POST'])
+@jwt_required()
+def buy_plastic():
+    data = request.get_json()
+    plastic_id = data.get('plastic_id')
+    retailer_id = data.get('retailer_id')
+    if not plastic_id:
+        return jsonify({'error': 'Plastic ID is required.'}), 400
+
+    current_user_username = get_jwt_identity()
+    user = User.query.filter_by(username=current_user_username).first()
+    
+    plastic = Plastic.query.get_or_404(plastic_id)
+    
+    if plastic.status != 'retailer':
+        return jsonify({'error': 'Plastic is not available for purchase.'}), 400
+
+    plastic.status = 'buyer'
+    points = Points.query.filter_by(transaction_type='retailer_to_buyer').first()
+    points_awarded = points.points_value
+    
+    buy_new_transaction = Transaction(
+        user_id=user.id,
+        plastic_id=plastic.id,
+        retailer_id=retailer_id,
+        log='Plastic (ID: '+str(plastic.id)+') bought from Retailer (ID: ' +str(retailer_id)+')',
+        points=points_awarded
+    )
+    ret_new_transaction = Transaction(
+        user_id=retailer_id,
+        plastic_id=plastic.id,
+        retailer_id=retailer_id,
+        log='Plastic (ID: '+str(plastic.id)+') sold to Buyer (ID: ' +str(user.id)+')',
+        points=points_awarded
+    )
+    db.session.add(buy_new_transaction)
+    db.session.add(ret_new_transaction)
+    db.session.commit()
+
+    db.session.add(PlasticBuyer(plastic_id=plastic.id, buyer_id=user.id))
+    
+    user.points += points_awarded
+
+    db.session.commit()
+
+    return jsonify({
+        'message': 'Plastic purchased successfully.',
+        'points_awarded': points_awarded
+    }), 200
+
+@app.route('/api/generate_qr/<int:retailer_id>', methods=['GET'])
+@jwt_required()
+def generate_qr_code(retailer_id):
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(f'retailer:{retailer_id}')
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill='black', back_color='white')
+
+    img_bytes = io.BytesIO()
+    img.save(img_bytes)
+    img_bytes.seek(0)
+
+    return send_file(img_bytes, mimetype='image/png', as_attachment=False, download_name='retailer_qr_code.png')
+
+@app.route('/api/get_user_plastics', methods=['GET'])
+@jwt_required()
+def get_user_plastics():
+    # Subquery to get the latest PlasticBuyer record for each plastic
+    subquery = db.session.query(
+        PlasticBuyer.plastic_id,
+        func.max(PlasticBuyer.id).label('max_id')
+    ).group_by(PlasticBuyer.plastic_id).subquery()
+
+    # Join Plastic with the latest PlasticBuyer record
+    query = db.session.query(
+        Plastic,
+        PlasticBuyer
+    ).outerjoin(
+        subquery,
+        Plastic.id == subquery.c.plastic_id
+    ).outerjoin(
+        PlasticBuyer,
+        (PlasticBuyer.plastic_id == subquery.c.plastic_id) & (PlasticBuyer.id == subquery.c.max_id)
+    ).filter(
+        Plastic.status == 'buyer'
+    ).all()
+
+    results = []
+    for plastic, plastic_buyer in query:
+        results.append({
+            'id': plastic.id,
+            'manufacturer_id': plastic.manufacturer_id,
+            'recycler_id': plastic.recycler_id,
+            'manufactured_date': plastic.manufactured_date.isoformat(),
+            'status': plastic.status,
+            'latest_buyer_id': plastic_buyer.buyer_id if plastic_buyer else None
+        })
+
+    return jsonify(results)
