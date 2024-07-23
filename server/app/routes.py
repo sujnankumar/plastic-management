@@ -265,7 +265,11 @@ def create_plastic():
     current_user_username = get_jwt_identity()
     user = User.query.filter_by(username=current_user_username).first()
     
-    manufacturer_id = data.get('manufacturerId')
+    manufacturer = Manufacturer.query.filter_by(user_id=user.id).first()
+    manufacturer_id = manufacturer.id
+    
+    print(user, manufacturer_id)
+
     plastic_type = data.get('type')
     cost = data.get('cost')
     quantity = data.get('quantity', 1)
@@ -336,7 +340,7 @@ def manufacturer_plastics(manufacturer_id):
 
         query = Plastic.query.filter_by(manufacturer_id=manufacturer.id, status='manufacturer')
 
-        plastics = query.order_by(Plastic.manufactured_date.desc()).all()
+        plastics = query.order_by(Plastic.id.desc()).all()
 
         plastics_data = [
             {
