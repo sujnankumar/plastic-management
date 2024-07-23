@@ -267,7 +267,7 @@ def create_plastic():
     
     manufacturer = Manufacturer.query.filter_by(user_id=user.id).first()
     manufacturer_id = manufacturer.id
-    
+
     print(user, manufacturer_id)
 
     plastic_type = data.get('type')
@@ -755,60 +755,86 @@ def get_plastics_for_retailer(retailer_id):
     current_user_username = get_jwt_identity()
     user = User.query.filter_by(username=current_user_username).first()
     
-    plastics = Plastic.query.join(PlasticRetailer).filter(PlasticRetailer.retailer_id == retailer_id, Plastic.status == 'retailer').all()
+    # Retrieve optional query parameter for plastic type
+    plastic_type = request.args.get('plastic_type', type=int)
+    
+    query = Plastic.query.join(PlasticRetailer).filter(
+        PlasticRetailer.retailer_id == retailer_id,
+        Plastic.status == 'retailer'
+    )
+    
+    # Apply plastic type filter if provided
+    if plastic_type is not None:
+        query = query.filter(Plastic.type == plastic_type)
+    
+    plastics = query.all()
+    
     return jsonify([{
         'id': p.id,
-        'manufactured_date': p.manufactured_date.strftime('%Y-%m-%d %H:%M:%S')
+        'manufactured_date': p.manufactured_date.strftime('%Y-%m-%d %H:%M:%S'),
+        'type': p.type,  # Include type in the response
+        'cost': p.cost   # Include cost in the response
     } for p in plastics])
 
 @app.route('/api/buy_plastic', methods=['POST'])
 @jwt_required()
 def buy_plastic():
     data = request.get_json()
-    plastic_id = data.get('plastic_id')
     retailer_id = data.get('retailer_id')
-    if not plastic_id:
-        return jsonify({'error': 'Plastic ID is required.'}), 400
+    quantities = data.get('quantities', {})  # Expect quantities to be a dictionary with type as keys
+    
+    print(retailer_id, quantities)
+    if not retailer_id or not isinstance(quantities, dict):
+        return jsonify({'error': 'Invalid data provided.'}), 400
 
     current_user_username = get_jwt_identity()
     user = User.query.filter_by(username=current_user_username).first()
     
-    plastic = Plastic.query.get_or_404(plastic_id)
-    
-    if plastic.status != 'retailer':
-        return jsonify({'error': 'Plastic is not available for purchase.'}), 400
+    if not user:
+        return jsonify({'error': 'User not found.'}), 404
 
-    plastic.status = 'buyer'
-    points = Points.query.filter_by(transaction_type='retailer_to_buyer').first()
-    points_awarded = points.points_value
-    
-    buy_new_transaction = Transaction(
-        user_id=user.id,
-        plastic_id=plastic.id,
-        retailer_id=retailer_id,
-        log='Plastic (ID: '+str(plastic.id)+') bought from Retailer (ID: ' +str(retailer_id)+')',
-        points=points_awarded
-    )
-    ret_new_transaction = Transaction(
-        user_id=retailer_id,
-        plastic_id=plastic.id,
-        retailer_id=retailer_id,
-        log='Plastic (ID: '+str(plastic.id)+') sold to Buyer (ID: ' +str(user.id)+')',
-        points=points_awarded
-    )
-    db.session.add(buy_new_transaction)
-    db.session.add(ret_new_transaction)
-    db.session.commit()
+    total_points_awarded = 0
 
-    db.session.add(PlasticBuyer(plastic_id=plastic.id, buyer_id=user.id))
-    
-    user.points += points_awarded
+    for plastic_type, quantity in quantities.items():
+        if quantity <= 0:
+            continue
+        
+        plastics = Plastic.query.filter_by(type=plastic_type, status='retailer').limit(quantity).all()
+
+        if len(plastics) < quantity:
+            return jsonify({'error': f'Not enough type {plastic_type} plastics available.'}), 400
+
+        for plastic in plastics:
+            plastic.status = 'buyer'
+            points = Points.query.filter_by(transaction_type='retailer_to_buyer').first()
+            points_awarded = points.points_value if points else 0
+
+            buy_new_transaction = Transaction(
+                user_id=user.id,
+                plastic_id=plastic.id,
+                retailer_id=retailer_id,
+                log=f'Plastic (ID: {plastic.id}) bought from Retailer (ID: {retailer_id})',
+                points=points_awarded
+            )
+            ret_new_transaction = Transaction(
+                user_id=retailer_id,
+                plastic_id=plastic.id,
+                retailer_id=retailer_id,
+                log=f'Plastic (ID: {plastic.id}) sold to Buyer (ID: {user.id})',
+                points=points_awarded
+            )
+            db.session.add(buy_new_transaction)
+            db.session.add(ret_new_transaction)
+            db.session.add(PlasticBuyer(plastic_id=plastic.id, buyer_id=user.id))
+            total_points_awarded += points_awarded
+
+            user.points += total_points_awarded
 
     db.session.commit()
 
     return jsonify({
-        'message': 'Plastic purchased successfully.',
-        'points_awarded': points_awarded
+        'message': 'Plastics purchased successfully.',
+        'points_awarded': total_points_awarded
     }), 200
 
 @app.route('/api/generate_qr/<int:retailer_id>', methods=['GET'])
@@ -862,6 +888,8 @@ def get_user_plastics():
             'recycler_id': plastic.recycler_id,
             'manufactured_date': plastic.manufactured_date.isoformat(),
             'status': plastic.status,
+            'type': plastic.type,
+            'cost': plastic.cost,
             'latest_buyer_id': plastic_buyer.buyer_id if plastic_buyer else None
         })
 
