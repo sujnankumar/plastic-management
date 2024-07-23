@@ -1,56 +1,82 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Html5Qrcode } from 'html5-qrcode';
-import axios from '../axios'; // Adjust the import path as needed
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { Html5Qrcode } from "html5-qrcode";
+import axios from "../axios"; // Adjust the import path as needed
+import { Bar } from "react-chartjs-2";
+import { FaLeaf, FaCoins, FaGift } from "react-icons/fa";
+import { Chart as ChartJS } from "chart.js/auto";
 
-const articles = [
+const data = {
+  labels: [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ],
+  datasets: [
+    {
+      label: "Points gained",
+      data: [100, 30, 65, 55, 30, 60, 75, 120],
+      backgroundColor: ["#009e00"],
+    },
+  ],
+};
+
+const items = [
   {
-    title: 'The Importance of Plastic Recycling',
-    content: 'Plastic recycling helps to reduce the environmental impact and conserves resources.',
-    bgColor: 'bg-blue-300',
-    size: 'large',
+    src: "https://5.imimg.com/data5/ON/VU/MY-3526621/plastic-bag.jpg",
+    category: "Kitchen",
+    name: "Everyday Plastic cover",
+    points: 10,
   },
   {
-    title: 'How to Sort Plastic Waste Effectively',
-    content: 'Sorting plastic waste correctly can make the recycling process more efficient.',
-    bgColor: 'bg-green-300',
-    size: 'small',
+    src: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTzLhGRZQTEjQ-NJ7klT1HgXFrsg49GopcGNQ&s",
+    category: "Food",
+    name: "Plastic Straws",
+    points: 5,
   },
   {
-    title: 'Innovations in Plastic Management',
-    content: 'New technologies are emerging to manage and recycle plastic more effectively.',
-    bgColor: 'bg-yellow-300',
-    size: 'medium',
+    src: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRcZ7geJ5doQGf79nX7DL9Ih0aKs5zgoOJ8Vg&s",
+    category: "Bathroom",
+    name: "Plastic buckets",
+    points: 35,
   },
   {
-    title: 'Plastic Waste in the Oceans',
-    content: 'Plastic waste in the oceans is a significant environmental issue that needs to be addressed.',
-    bgColor: 'bg-red-300',
-    size: 'medium',
+    src: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSuyz0KbYtxFZwdAICYemLp2-SL3ajYeJeuBw&s",
+    category: "Bathroom",
+    name: "Plastic mug",
+    points: 20,
   },
   {
-    title: 'Community Initiatives for Plastic Reduction',
-    content: 'Local communities are taking initiatives to reduce plastic usage and promote recycling.',
-    bgColor: 'bg-purple-300',
-    size: 'small',
+    src: "https://tiimg.tistatic.com/fp/1/007/916/pack-of-100-peace-for-party-events-white-colour-disposable-plastic-spoons--715.jpg",
+    category: "Kitchen",
+    name: "Plastic spoons",
+    points: 15,
+  },
+  {
+    src: "https://dummyimage.com/420x260",
+    category: "Plastic",
+    name: "Small Size Plastic",
+    points: 25,
+  },
+  {
+    src: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRJRgVqgbvCeyG1kjhrJ4eMMp6tD5IReusUkQ&s",
+    category: "Plastic",
+    name: "Plastic Water Bottles",
+    points: 20,
+  },
+  {
+    src: "https://dummyimage.com/420x260",
+    category: "Plastic",
+    name: "Small Size Plastic",
+    points: 25,
   },
 ];
 
-
-const getSizeClass = (size) => {
-  switch (size) {
-    case 'large':
-      return 'col-span-2 row-span-2';
-    case 'medium':
-      return 'col-span-1 row-span-2';
-    case 'small':
-    default:
-      return 'col-span-1 row-span-1';
-  }
-};
-
 const BuyerDashboard = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [plastics, setPlastics] = useState([]);
   const [isScanning, setIsScanning] = useState(false);
   const [html5QrCode, setHtml5QrCode] = useState(null);
@@ -61,22 +87,16 @@ const BuyerDashboard = () => {
   useEffect(() => {
     const fetchPlastics = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/get_user_plastics'); // Replace with your API endpoint
+        const response = await axios.get(
+          "http://localhost:5000/api/get_user_plastics"
+        ); // Replace with your API endpoint
         setPlastics(response.data);
       } catch (error) {
-        console.error('Error fetching plastics:', error);
+        console.error("Error fetching plastics:", error);
       }
     };
 
     fetchPlastics();
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentSlide((prevSlide) => (prevSlide + 1) % articles.length);
-    }, 3000);
-
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -85,32 +105,34 @@ const BuyerDashboard = () => {
       setHtml5QrCode(html5Qr);
 
       const config = { fps: 10, qrbox: 250 };
-      html5Qr.start(
-        { facingMode: "environment" }, // Use environment-facing camera
-        config,
-        (decodedText, decodedResult) => {
-          console.log('QR Scan Data:', decodedText);
-          try {
-            const retailerId = parseRetailerIdFromQR(decodedText);
-            if (retailerId) {
-              navigate(`/retailer/${retailerId}/plastics`);
-              stopScanning(); // Stop scanning after successful scan
+      html5Qr
+        .start(
+          { facingMode: "environment" }, // Use environment-facing camera
+          config,
+          (decodedText, decodedResult) => {
+            console.log("QR Scan Data:", decodedText);
+            try {
+              const retailerId = parseRetailerIdFromQR(decodedText);
+              if (retailerId) {
+                navigate(`/retailer/${retailerId}/plastics`);
+                stopScanning(); // Stop scanning after successful scan
+              }
+            } catch (error) {
+              console.error("Error parsing QR data:", error);
             }
-          } catch (error) {
-            console.error('Error parsing QR data:', error);
+          },
+          (error) => {
+            console.error("QR scan error:", error);
           }
-        },
-        (error) => {
-          console.error('QR scan error:', error);
-        }
-      ).catch((error) => {
-        console.error('Error starting QR code scanner:', error);
-      });
+        )
+        .catch((error) => {
+          console.error("Error starting QR code scanner:", error);
+        });
 
       return () => {
         if (html5Qr) {
           html5Qr.stop().catch((error) => {
-            console.error('Error stopping QR code scanner:', error);
+            console.error("Error stopping QR code scanner:", error);
           });
         }
       };
@@ -118,100 +140,170 @@ const BuyerDashboard = () => {
   }, [isScanning, navigate]);
 
   const parseRetailerIdFromQR = (data) => {
-    console.log('Raw QR data:', data);
+    console.log("Raw QR data:", data);
 
     try {
-      if (typeof data === 'string') {
-        const parts = data.split(':');
+      if (typeof data === "string") {
+        const parts = data.split(":");
         if (parts.length === 2 && !isNaN(parseInt(parts[1], 10))) {
           return parseInt(parts[1], 10);
         }
       }
     } catch (error) {
-      console.error('Error parsing data:', error);
+      console.error("Error parsing data:", error);
     }
     return null;
   };
 
-  const stopScanning = () => {
-    setIsScanning(false);
-    if (html5QrCode) {
-      html5QrCode.stop().catch((error) => {
-        console.error('Error stopping QR code scanner:', error);
-      });
+  const stopScanning = async () => {
+    try {
+      if (html5QrCodeRef.current) {
+        await html5QrCodeRef.current.stop();
+        html5QrCodeRef.current = null; // Clear reference to avoid issues
+      }
+    } catch (error) {
+      console.error('Error stopping QR code scanner:', error);
+    } finally {
+      setIsScanning(false); // Update state to indicate scanning has stopped
     }
   };
 
   return (
-    <div className="relative min-h-screen bg-gray-100 p-8 pt-10">
-      <h1 className="text-3xl font-bold text-center mb-4">Dashboard</h1>
+    <div>
+      <div className="relative min-h-screen bg-gray-100 px-10 py-8">
+        {/* QR Code Scanner and Plastics Display */}
+        <header className="rounded-md mb-4 flex items-center">
+                <span className="text-3xl text-gray-800">Good Morning</span>
+                <h1 className="text-4xl font-bold ml-2 text-gray-800">
+                  Manik,
+                </h1>
+              </header>
 
-      <button
-        onClick={() => setIsScanning(true)}
-        className="bg-green-500 text-white px-4 py-2 rounded-md shadow-md hover:bg-green-600 mb-8"
-      >
-        Scan QR Code
-      </button>
-
-      {isScanning && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
-          <div className="relative p-4 bg-white rounded-lg shadow-lg">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white shadow-md rounded-md p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              Buy Plastics
+            </h2>
             <button
-              onClick={stopScanning}
-              className="absolute top-2 right-2 text-black"
-              aria-label="Close QR Scanner"
+              onClick={() => setIsScanning(true)}
+              className="bg-green-500 text-white px-4 py-2 rounded-md shadow-md hover:bg-green-600"
             >
-              X
+              Scan Retailer QR
             </button>
-            <h2 className="text-xl font-bold mb-4">Scan Retailer QR Code</h2>
-            <div id="qr-code-scanner" style={{ width: '300px', height: '300px' }}></div>
-          </div>
-        </div>
-      )}
 
-      <h2 className="text-3xl font-bold text-center mb-4">Your Plastics</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {plastics.map((plastic, index) => (
-          <div
-            key={index}
-            className={`p-6 rounded-lg shadow-lg bg-blue-300 ${getSizeClass('medium')}`}
-          >
-            <h2 className="text-xl font-bold mb-2">{plastic.name}</h2>
-            <p className="text-gray-700">Plastic ID: {plastic.id}</p>
-            <p className="text-gray-700">Description: {plastic.description}</p>
-          </div>
-        ))}
-      </div>
-
-      <h2 className="text-3xl font-bold text-center mb-4">Recent Articles</h2>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
-        <div className="lg:col-span-3">
-          <div className="relative w-full h-64 overflow-hidden rounded-lg shadow-lg">
-            {articles.map((article, index) => (
-              <div
-                key={index}
-                className={`absolute inset-0 flex items-center justify-center transition-opacity duration-1000 ${currentSlide === index ? 'opacity-100' : 'opacity-0'}`}
-              >
-                <div className={`w-full h-full ${article.bgColor} flex flex-col items-center justify-center p-8 rounded-lg`}>
-                  <h2 className="text-2xl font-bold mb-2">{article.title}</h2>
-                  <p className="text-gray-700 text-center">{article.content}</p>
+            {isScanning && (
+              <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
+                <div className="relative p-4 bg-white rounded-lg shadow-lg">
+                  <button
+                    onClick={stopScanning}
+                    className="absolute top-2 right-2 text-black"
+                    aria-label="Close QR Scanner"
+                  >
+                    X
+                  </button>
+                  <h2 className="text-xl font-bold mb-4">
+                    Scan Retailer QR Code
+                  </h2>
+                  <div
+                    id="qr-code-scanner"
+                    style={{ width: "300px", height: "300px" }}
+                  ></div>
                 </div>
               </div>
-            ))}
+            )}
+          </div>
+
+          <div className="bg-white shadow-md rounded-md p-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              Your Plastics
+            </h2>
+            {plastics.length === 0 ? (
+              <p className="text-gray-600">
+                You don't have any plastics. Buy now!
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {plastics.map((plastic, index) => (
+                  <div
+                    key={index}
+                    className="p-4 bg-blue-300 rounded-md shadow-md"
+                  >
+                    <h2 className="text-lg font-bold mb-2">{plastic.name}</h2>
+                    <p className="text-gray-700">Plastic ID: {plastic.id}</p>
+                    <p className="text-gray-700">
+                      Description: {plastic.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {articles.slice(1).map((article, index) => (
-          <div
-            key={index}
-            className={`p-6 rounded-lg shadow-lg ${article.bgColor} ${getSizeClass(article.size)}`}
-          >
-            <h2 className="text-xl font-bold mb-2">{article.title}</h2>
-            <p className="text-gray-700">{article.content}</p>
-          </div>
-        ))}
+        {/* Rest of the Dashboard */}
+        <div className="px-3">
+          <header className="rounded-md">
+            <div className="p-4">
+              <main className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white shadow-md rounded-md p-6 flex items-center">
+                  <FaCoins className="text-green-500 text-3xl mr-4" />
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-800 mb-2">
+                      Available Points
+                    </h2>
+                    <p className="text-gray-600 mb-4">500 Points</p>
+                    <button className="bg-green-500 text-white px-4 py-2 rounded-md shadow-md hover:bg-green-600">
+                      Redeem Points
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-white shadow-md rounded-md p-6">
+                  <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                    Points Gained Over the Week
+                  </h2>
+                  <Bar data={data} />
+                </div>
+              </main>
+
+              <section className="mt-8">
+                <div className="flex items-center mb-4">
+                  <h2 className="text-2xl font-bold text-gray-800 flex-grow">
+                    Rewards for you
+                  </h2>
+                  <FaGift className="text-green-500 text-2xl" />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  {items.map((item, index) => (
+                    <div
+                      key={index}
+                      className="p-4 bg-white shadow-md rounded-md"
+                    >
+                      <a className="block relative h-48 rounded overflow-hidden">
+                        <img
+                          alt="ecommerce"
+                          className="object-cover object-center w-full h-full block"
+                          src={item.src}
+                        />
+                      </a>
+                      <div className="mt-4">
+                        <h3 className="text-gray-500 text-sm tracking-widest title-font mb-1">
+                          {item.category}
+                        </h3>
+                        <h2 className="text-gray-900 title-font text-xl font-medium">
+                          {item.name}
+                        </h2>
+                        <p className="mt-5 p-1 cursor-default text-md text-white font-bold text-center bg-green-600 rounded-lg">
+                          + {item.points}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          </header>
+        </div>
       </div>
     </div>
   );
