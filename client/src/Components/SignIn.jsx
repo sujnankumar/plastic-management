@@ -39,7 +39,7 @@ const SignIn = () => {
     };
 
     return (
-        <div className="min-h-screen flex justify-center items-center bg-[#9fdfc5]">
+        <div className="min-h-screen flex justify-center items-center bg-[url('/public/image.png')] bg-cover h-screen bg-center -mt-8">
             <div className="w-full max-w-md p-8 space-y-3 rounded-xl bg-gray-50 text-gray-800">
                 <h1 className="my-3 text-4xl font-bold text-center">Login</h1>
                 <form noValidate className="space-y-6" onSubmit={e => e.preventDefault()}>
@@ -78,7 +78,7 @@ const SignIn = () => {
                     </div>
                     {error && <p className="text-red-600 text-sm">{error}</p>}
                     <button
-                        className="block w-full p-3 text-center rounded-sm text-gray-50 bg-[#2b654f]"
+                        className="block w-full p-3 text-center rounded-sm text-gray-50 bg-green-600"
                         onClick={handleSignin}
                         disabled={loading}
                     >
