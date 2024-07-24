@@ -31,9 +31,9 @@ const SignUp = () => {
     };
 
     return (
-        <div className="min-h-screen flex justify-center items-center bg-[#9fdfc5]">
+        <div className="flex justify-center items-center bg-[url('/public/image.png')] bg-cover min-h-screen bg-center pt-12 pb-12">
 
-        <div className="w-full max-w-md p-8 space-y-3 rounded-xl bg-gray-50 text-gray-800">
+        <div className="w-[50rem] p-10 px-14 space-y-3 rounded-xl bg-gray-50 text-gray-800">
             <div className="mb-8 text-center">
                 <h1 className="my-3 text-4xl font-bold">Sign Up</h1>
                 <p className="text-sm dark:text-gray-600">
@@ -41,9 +41,9 @@ const SignUp = () => {
                 </p>
             </div>
             <form noValidate="" className="space-y-10" onSubmit={e => e.preventDefault()}>
-                <div className="space-y-3">
+                <div className="space-y-3 grid gap-10 grid-cols-2">
                     <div>
-                        <label htmlFor="username" className="block mb-2 text-sm">
+                        <label htmlFor="username" className="block mt-3 mb-2 text-sm">
                             Username
                         </label>
                         <input
@@ -187,7 +187,7 @@ const SignUp = () => {
                     <div>
                         <button
                             type="button"
-                            className="block w-full p-3 text-center rounded-sm text-gray-50 bg-[#2b654f]"
+                            className="block w-full p-3 text-center rounded-sm text-gray-50 bg-green-600"
                             onClick={handleSignup}
                         >
                             Sign Up
@@ -197,8 +197,8 @@ const SignUp = () => {
                         Already have an account?{" "}
                         <Link
                             rel="noopener noreferrer"
-                            to="/signin"
-                            className="hover:underline dark:text-violet-600"
+                            to="/"
+                            className="hover:underline text-green-700"
                         >
                             Log in
                         </Link>
