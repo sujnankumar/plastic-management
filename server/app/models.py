@@ -125,6 +125,15 @@ class Rewards(db.Model):
     image_url = db.Column(db.String(100), nullable=True)
     type = db.Column(db.Integer)
 
+class RedeemedReward(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    reward_title = db.Column(db.String(255), nullable=False)
+    reward_points = db.Column(db.Integer, nullable=False)
+    img = db.Column(db.String(500), default='https://c8.alamy.com/comp/2A012NB/reward-label-reward-red-band-sign-reward-2A012NB.jpg',nullable=False)
+    redeemed_at = db.Column(db.DateTime, default=datetime.now(timezone.utc), nullable=False)
+    
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
