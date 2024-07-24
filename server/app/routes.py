@@ -218,6 +218,33 @@ def assign_role():
 #     db.session.commit()
 #     return jsonify({'message': 'Plastic item created'}), 201
 
+@app.route('/api/rewards/redeem', methods=['POST'])
+def redeem_reward():
+    data = request.json
+    user_id = data.get('user_id')
+    reward_title = data.get('reward_title')
+    reward_points = data.get('reward_points')
+    reward_image = data.get('reward_image')
+
+    user = User.query.get(user_id)
+    
+    if user and user.points >= reward_points:
+        # Create a redeemed reward record
+        redeemed_reward = RedeemedReward(
+            user_id=user_id,
+            reward_title=reward_title,
+            reward_points=reward_points,
+            img=reward_image
+        )
+        
+        db.session.add(redeemed_reward)
+        db.session.commit()
+
+        return jsonify({"message": "Reward redeemed successfully!"}), 200
+    else:
+        return jsonify({"message": "Insufficient points or user not found!"}), 400
+
+
 @app.route('/api/buyers', methods=['GET'])
 @jwt_required()
 def get_buyers():
