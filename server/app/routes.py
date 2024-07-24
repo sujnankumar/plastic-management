@@ -805,6 +805,19 @@ def get_transactions():
         'date': tx.date.strftime('%Y-%m-%d %H:%M:%S')
     } for tx in transactions])
 
+@app.route('/api/redeemed_rewards', methods=['GET'])
+@jwt_required()
+def get_redeemed_rewards():
+    current_user_username = get_jwt_identity()
+    user = User.query.filter_by(username=current_user_username).first()
+    redeemed_rewards = RedeemedReward.query.filter_by(user_id=user.id).order_by(RedeemedReward.redeemed_at.desc()).all()
+    return jsonify([{
+        'reward_title': rr.reward_title,
+        'reward_points': rr.reward_points,
+        'redeemed_at': rr.redeemed_at.strftime('%Y-%m-%d %H:%M:%S'),
+        'reward_image': rr.img
+    } for rr in redeemed_rewards])
+
 @app.route('/api/plastics/for_retailer/<int:retailer_id>', methods=['GET'])
 @jwt_required()
 def get_plastics_for_retailer(retailer_id):
