@@ -4,7 +4,8 @@ import axios from "../axios";
 const Profile = () => {
     const [userData, setUserData] = useState(null);
     const [transactions, setTransactions] = useState([]);
-    const [userId, setUserId] = useState(null); // Add this if user ID is not already available
+    const [redeemedRewards, setRedeemedRewards] = useState([]);
+    const [userId, setUserId] = useState(null);
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -32,25 +33,36 @@ const Profile = () => {
             };
 
             fetchTransactions();
+
+            const fetchRedeemedRewards = async () => {
+                try {
+                    const response = await axios.get(`/api/redeemed_rewards`);
+                    setRedeemedRewards(response.data);
+                } catch (error) {
+                    console.error("Error fetching redeemed rewards:", error);
+                }
+            };
+
+            fetchRedeemedRewards();
         }
     }, [userId]);
 
     return (
-        <div className="bg-gray-100 overflow-hidden h-screen w-screen p-5 px-8">
-            <div className="container min-h-screen">
-                <div className="md:flex no-wrap md:-mx-2">
-                    <div className="w-full md:w-3/12 md:mx-2">
+        <div className="bg-gray-100 h-screen overflow-y-auto">
+            <div className="container mx-auto p-5">
+                <div className="flex flex-col md:flex-row">
+                    <div className="w-full md:w-4/12 md:pr-4 flex flex-col space-y-4">
                         {/* Profile Section */}
-                        <div className="bg-white p-3 border-t-4 border-green-400">
+                        <div className="bg-white p-5 border-t-4 border-green-400 rounded-lg shadow-lg flex-grow" style={{ boxShadow: "0 8px 16px rgba(0, 128, 0, 0.2)" }}>
                             <div className="image overflow-hidden">
                                 <img
-                                    className="h-auto w-full mx-auto"
+                                    className="h-auto w-full mx-auto rounded-full"
                                     src="https://lavinephotography.com.au/wp-content/uploads/2017/01/PROFILE-Photography-112.jpg"
                                     alt=""
                                 />
                             </div>
                             <h1 className="text-gray-900 font-bold text-xl leading-8 my-1">
-                               {userData && (
+                                {userData && (
                                     <>
                                         <span>{userData.firstname} </span>
                                         <span>{userData.lastname}</span>
@@ -59,10 +71,10 @@ const Profile = () => {
                             </h1>
                             <h3 className="text-gray-600 font-lg text-semibold leading-6">
                                 {userData && (
-                                        <span>{userData.username}</span>
+                                    <span>{userData.username}</span>
                                 )}
                             </h3>
-                            <ul className="bg-gray-100 text-gray-600 hover:text-gray-700 hover:shadow py-2 px-3 mt-3 divide-y rounded shadow-sm">
+                            <ul className="bg-gray-100 text-gray-600 py-2 px-3 mt-3 divide-y rounded shadow-sm">
                                 <li className="flex items-center py-3">
                                     <span>Points</span>
                                     <span className="ml-auto">
@@ -84,15 +96,55 @@ const Profile = () => {
                                     </span>
                                 </li>
                             </ul>
-                            <button className="block w-full text-blue-800 text-sm font-semibold rounded-lg hover:bg-gray-100 focus:outline-none focus:shadow-outline focus:bg-gray-100 hover:shadow-xs p-3 my-4">
+                            <button className="block w-full text-blue-800 text-sm font-semibold rounded-lg hover:bg-gray-100 focus:outline-none focus:shadow-outline p-3 my-4">
                                 Go to rewards
                             </button>
                         </div>
-                        <div className="my-4"></div>
+
+                        {/* Redeemed Rewards Section */}
+                        <div className="bg-white p-5 rounded-lg max-h-60 overflow-y-auto" style={{ boxShadow: "0 8px 16px rgba(0, 128, 0, 0.2)", width: "100%" }}>
+                            <div className="flex items-center space-x-2 font-semibold text-gray-900 leading-8">
+                                <span className="text-blue-500">
+                                    <svg
+                                        className="h-5"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2"
+                                            d="M12 8v8m-4-4h8"
+                                        />
+                                    </svg>
+                                </span>
+                                <span className="tracking-wide">Redeemed Rewards</span>
+                            </div>
+                            <div className="grid grid-cols-1 gap-4 mt-2">
+                                {redeemedRewards.length > 0 ? (
+                                    redeemedRewards.map((reward, index) => (
+                                        <div key={index} className="bg-gray-100 p-3 rounded-lg" style={{ boxShadow: "0 8px 16px rgba(0, 128, 0, 0.2)" }}>
+                                            <img
+                                                src={reward.reward_image}  // Assuming 'reward_image' holds the URL of the image
+                                                alt={reward.reward_title}
+                                                className="w-full h-auto rounded-lg mb-2"
+                                            />
+                                            <p className="text-gray-700">{reward.reward_title}</p>
+                                            <p className="text-gray-600">Points Used: {reward.reward_points}</p>
+                                            <p className="text-gray-500 text-sm">Date: {reward.redeemed_at}</p>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-gray-600">No redeemed rewards available.</p>
+                                )}
+                            </div>
+                        </div>
                     </div>
-                    <div className="w-full md:w-9/12 mx-2">
-                        <div className="bg-white p-3 shadow-sm rounded-sm">
-                            {/* About Section */}
+                    <div className="w-full md:w-8/12 mt-4 md:mt-0 flex flex-col space-y-4">
+                        {/* About Section */}
+                        <div className="bg-white p-5 rounded-lg flex-grow" style={{ boxShadow: "0 8px 16px rgba(0, 128, 0, 0.2)" }}>
                             <div className="flex items-center space-x-2 font-semibold text-gray-900 leading-8">
                                 <span className="text-green-500">
                                     <svg
@@ -114,7 +166,6 @@ const Profile = () => {
                             </div>
                             <div className="text-gray-700">
                                 <div className="grid md:grid-cols-2 text-sm">
-                                    {/* Display User Information */}
                                     <div className="grid grid-cols-2">
                                         <div className="px-4 py-2 font-semibold">First Name</div>
                                         <div className="px-4 py-2">
@@ -146,24 +197,19 @@ const Profile = () => {
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2">
-                                        <div className="px-4 py-2 font-semibold">Address</div>
+                                        <div className="px-4 py-2 font-semibold">Current Address</div>
                                         <div className="px-4 py-2">
                                             {userData && <span>{userData.address}</span>}
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2">
-                                        <div className="px-4 py-2 font-semibold">Email</div>
+                                        <div className="px-4 py-2 font-semibold">Permanent Address</div>
                                         <div className="px-4 py-2">
-                                            <a
-                                                className="text-blue-800"
-                                                href={`mailto:${userData ? userData.email : ''}`}
-                                            >
-                                                {userData && <span>{userData.email}</span>}
-                                            </a>
+                                            {userData && <span>{userData.address}</span>}
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2">
-                                        <div className="px-4 py-2 font-semibold">Birthday</div>
+                                        <div className="px-4 py-2 font-semibold">Date of Birth</div>
                                         <div className="px-4 py-2">
                                             {userData && <span>{userData.dob}</span>}
                                         </div>
@@ -171,11 +217,8 @@ const Profile = () => {
                                 </div>
                             </div>
                         </div>
-
-                        <div className="my-4"></div>
-
                         {/* Transactions Section */}
-                        <div className="bg-white p-3 shadow-sm rounded-sm h-[calc(100vh-24rem)] overflow-auto">
+                        <div className="bg-white p-5 rounded-lg" style={{ boxShadow: "0 8px 16px rgba(0, 128, 0, 0.2)" }}>
                             <div className="flex items-center space-x-2 font-semibold text-gray-900 leading-8">
                                 <span className="text-blue-500">
                                     <svg
@@ -189,25 +232,25 @@ const Profile = () => {
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
                                             strokeWidth="2"
-                                            d="M4 15l5 5L20 4"
+                                            d="M3 13l4 4L10 12l4 4 4-4"
                                         />
                                     </svg>
                                 </span>
                                 <span className="tracking-wide">Transactions</span>
                             </div>
-                            <div className="grid grid-cols-1 gap-4 mt-2">
+                            <ul className="list-inside space-y-4">
                                 {transactions.length > 0 ? (
                                     transactions.map((transaction, index) => (
-                                        <div key={index} className="bg-gray-100 p-2 rounded-lg shadow-md">
-                                            <p className="text-gray-700">{transaction.log}</p>
-                                            <p className="text-gray-600">Points: {transaction.points}</p>
+                                        <li key={index} className="bg-gray-100 p-3 rounded-lg" style={{ boxShadow: "0 8px 16px rgba(0, 128, 0, 0.2)" }}>
+                                            <p className="text-gray-700">{transaction.description}</p>
+                                            <p className="text-gray-600">Amount: {transaction.amount}</p>
                                             <p className="text-gray-500 text-sm">Date: {transaction.date}</p>
-                                        </div>
+                                        </li>
                                     ))
                                 ) : (
-                                    <p>No transactions found.</p>
+                                    <p className="text-gray-600">No transactions available.</p>
                                 )}
-                            </div>
+                            </ul>
                         </div>
                     </div>
                 </div>
