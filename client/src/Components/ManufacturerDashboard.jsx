@@ -48,14 +48,16 @@ const ManufacturerDashboard = () => {
         if (!manufacturer) return;
 
         try {
-            // Create multiple plastics
-            for (let i = 0; i < plasticQuantity; i++) {
-                await axiosInstance.post("/api/create_plastic", {
-                    manufacturerId: manufacturer.id,
-                    type: plasticType,
-                    cost: plasticCost,
-                });
-            }
+            // Send a single request to create multiple plastics
+            const response = await axiosInstance.post("/api/create_plastic", {
+                manufacturerId: manufacturer.id,
+                type: plasticType,
+                cost: plasticCost,
+                quantity: plasticQuantity,
+            });
+
+            console.log(response.data.message); // Log the success message
+
             setCreatedPlastic({
                 type: plasticType,
                 cost: plasticCost,
@@ -89,7 +91,7 @@ const ManufacturerDashboard = () => {
     return (
         <div className="container mx-10 p-5 py-16 m-auto">
             {manufacturer && (
-                <section className="shadow-lg rounded border py-8 mr-14">
+                <section className="shadow-lg rounded bg-white border py-8 mr-14">
                     <div className="grid max-w-6xl grid-cols-1 px-6 mx-auto lg:px-8 md:grid-cols-2 md:divide-x">
                         <div className="py-6 md:py-0 md:px-6">
                             <h1 className="text-4xl font-bold text-green-600">
@@ -141,15 +143,10 @@ const ManufacturerDashboard = () => {
                                 Plastic Type:
                                 <select
                                     value={plasticType}
-                                    onChange={(e) =>
-                                        setPlasticType(parseInt(e.target.value))
-                                    }
-                                    className="p-2 cursor-pointer block w-full mt-1 border-gray-300 rounded-md"
+                                    onChange={(e) => setPlasticType(parseInt(e.target.value))}
+                                    className="p-2 cursor-pointer block w-full mt-1 border border-green-300 rounded-md"
                                 >
-                                    <option
-                                        value={1}
-                                        className="p-2 cursor-pointer"
-                                    >
+                                    <option value={1} className="p-2 cursor-pointer">
                                         Type 1
                                     </option>
                                     <option value={2}>Type 2</option>
@@ -160,10 +157,8 @@ const ManufacturerDashboard = () => {
                                 <input
                                     type="number"
                                     value={plasticCost}
-                                    onChange={(e) =>
-                                        setPlasticCost(e.target.value)
-                                    }
-                                    className="block w-full mt-1 p-2 border-gray-300 rounded-md"
+                                    onChange={(e) => setPlasticCost(e.target.value)}
+                                    className="block w-full mt-1 p-2 border border-green-300 rounded-md"
                                 />
                             </label>
                             <label className="block mb-2">
@@ -171,16 +166,13 @@ const ManufacturerDashboard = () => {
                                 <input
                                     type="number"
                                     value={plasticQuantity}
-                                    onChange={(e) =>
-                                        setPlasticQuantity(
-                                            parseInt(e.target.value)
-                                        )
-                                    }
+                                    onChange={(e) => setPlasticQuantity(parseInt(e.target.value))}
                                     min="1"
-                                    className="p-2 block w-full mt-1 border-gray-300 rounded-md"
+                                    className="p-2 block w-full mt-1 border border-green-300 rounded-md"
                                 />
                             </label>
                             <button
+                                type="button"
                                 onClick={createPlastic}
                                 className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4"
                             >
@@ -190,63 +182,6 @@ const ManufacturerDashboard = () => {
                     </div>
                 </section>
             )}
-            {/* {manufacturer && (
-                <div className="mb-4">
-                    <h2 className="text-xl font-bold">Manufacturer Details</h2>
-                    <p>ID: {manufacturer.id}</p>
-                    <p>Business Name: {manufacturer.business_name}</p>
-                    <p>Contact: {manufacturer.business_contact}</p>
-                    <p>Address: {manufacturer.business_address}</p>
-                </div>
-            )} */}
-            {/* <div className="mb-4">
-                <label className="block mb-2">
-                    Plastic Type:
-                    <select
-                        value={plasticType}
-                        onChange={(e) =>
-                            setPlasticType(parseInt(e.target.value))
-                        }
-                        className="block w-full mt-1 border-gray-300 rounded-md"
-                    >
-                        <option value={1}>Type 1</option>
-                        <option value={2}>Type 2</option>
-                    </select>
-                </label>
-                <label className="block mb-2">
-                    Cost:
-                    <input
-                        type="number"
-                        value={plasticCost}
-                        onChange={(e) => setPlasticCost(e.target.value)}
-                        className="block w-full mt-1 border-gray-300 rounded-md"
-                    />
-                </label>
-                <label className="block mb-2">
-                    Quantity:
-                    <input
-                        type="number"
-                        value={plasticQuantity}
-                        onChange={(e) =>
-                            setPlasticQuantity(parseInt(e.target.value))
-                        }
-                        min="1"
-                        className="block w-full mt-1 border-gray-300 rounded-md"
-                    />
-                </label>
-                <button
-                    onClick={createPlastic}
-                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
-                >
-                    Add Plastics
-                </button>
-            </div> */}
-            {/* <a
-                href="/manufacturer_plastics"
-                className="bg-green-500 mx-10 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4"
-            >
-                View all Plastics
-            </a> */}
             {createdPlastic && showMessage && (
                 <div className="mt-4 transition-opacity duration-500 ease-in-out opacity-100">
                     <h2 className="text-xl font-bold">Plastics Created</h2>

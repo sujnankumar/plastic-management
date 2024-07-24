@@ -22,7 +22,9 @@ import TransferRetailertoBuyer from "./Components/TransferRetailertoBuyer";
 import TransferBuyertoRetailer from "./Components/TransferBuyertoRetailer";
 import TransferRetailertoRecycler from "./Components/TransferRetailertoRecycler";
 import RetailerInventory from "./Components/RetailerInventory";
-import BuyRetailerPlastics from './Components/BuyRetailerPlastics'; // Import Retailer Plastics Page
+import BuyRetailerPlastics from './Components/BuyRetailerPlastics'; 
+import RecyclerPlastics from "./Components/RecyclerPlastics";
+
 
 const ProtectedRoute = ({ Component, ...rest }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(null);
@@ -128,6 +130,7 @@ function App() {
                     <Route path="/transfer/retailer-to-recycler" element={<ProtectedRoute Component={TransferRetailertoRecycler} />} />
                     <Route path="/inventory" element={<ProtectedRoute Component={RetailerInventory} />} />
                     <Route path="/retailer/:retailerId/plastics" element={<ProtectedRoute Component={BuyRetailerPlastics} />} /> {/* Retailer Plastics Page */}
+                    <Route path="/recycler_plastics" element={<ProtectedRoute Component={RecyclerPlastics} />} /> {/* Retailer Plastics Page */}
 
                     {user && user.role === 'admin' && (
                         <Route path="/validate_roles" element={<AdminRoute Component={ValidateRoles} />} />

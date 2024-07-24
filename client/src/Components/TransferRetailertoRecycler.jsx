@@ -1,114 +1,211 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from '../axios';
+import { Html5Qrcode } from 'html5-qrcode';
 
-const TransferRetailertoRecycler = () => {
-  const [plastics, setPlastics] = useState([]);
-  const [recyclers, setRecyclers] = useState([]);
-  const [selectedPlastic, setSelectedPlastic] = useState('');
-  const [selectedRecycler, setSelectedRecycler] = useState('');
+const TransferManufacturertoRetailer = () => {
+  const [isScanning, setIsScanning] = useState(false);
+  const [isTransferring, setIsTransferring] = useState(false); // New state for transfer in progress
+  const [type1Quantity, setType1Quantity] = useState(0);
+  const [type2Quantity, setType2Quantity] = useState(0);
   const [message, setMessage] = useState('');
-  const [retailerId, setRetailerId] = useState(null);
+  const [error, setError] = useState('');
+  const html5QrCodeRef = useRef(null);
+  const scanInProgressRef = useRef(false); // Ref to track if a scan is already in progress
 
   useEffect(() => {
-    const fetchRetailerId = async () => {
-      try {
-        const response = await axios.get('/api/get_retailer_id');
-        setRetailerId(response.data.retailer_id);
-      } catch (error) {
-        console.error('Error fetching retailer ID:', error);
-      }
-    };
+    if (isScanning) {
+      const startScanning = async () => {
+        try {
+          if (html5QrCodeRef.current) {
+            await html5QrCodeRef.current.stop();
+          }
+          const html5QrCode = new Html5Qrcode("qr-code-scanner");
+          html5QrCodeRef.current = html5QrCode;
 
-    const fetchPlastics = async () => {
-      try {
-        if (!retailerId) return;
-        const response = await axios.get(`/api/retailer_plastics/${retailerId}`);
-        setPlastics(response.data);
-      } catch (error) {
-        console.error('Error fetching plastics:', error);
-      }
-    };
+          const config = { fps: 10, qrbox: 250 };
 
-    const fetchRecyclers = async () => {
-      try {
-        const response = await axios.get('/api/recyclers');
-        setRecyclers(response.data);
-      } catch (error) {
-        console.error('Error fetching recyclers:', error);
-      }
-    };
+          const onScanSuccess = async (decodedText) => {
+            // Prevent multiple requests for the same scan
+            if (scanInProgressRef.current) {
+              return;
+            }
+            scanInProgressRef.current = true;
 
-    fetchRetailerId();
-    fetchRecyclers();
+            try {
+              const retailerId = parseRetailerIdFromQR(decodedText);
+              if (retailerId) {
+                await handleTransferPlastic(retailerId);
+              } else {
+                setError('Invalid QR code data.');
+              }
+            } catch (error) {
+              console.error('Error processing QR data:', error);
+              setError('Error processing QR data.');
+            } finally {
+              stopScanning();
+              scanInProgressRef.current = false; // Reset after processing
+            }
+          };
 
-    if (retailerId) {
-      fetchPlastics();
+          const onScanError = (error) => {
+            console.error('QR scan error:', error);
+            setError('QR scan error.');
+          };
+
+          await html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            onScanSuccess,
+            onScanError
+          );
+
+        } catch (error) {
+          console.error('Error starting QR code scanner:', error);
+          setError('Error starting QR code scanner.');
+          stopScanning();
+        }
+      };
+
+      startScanning();
+
+      return () => {
+        stopScanning();
+      };
     }
-  }, [retailerId]);
+  }, [isScanning]);
 
-  const handleTransferPlastic = async () => {
+  const parseRetailerIdFromQR = (data) => {
+    console.log('Raw QR data:', data);
     try {
-      if (!selectedPlastic || !selectedRecycler) {
-        setMessage('Please select both a plastic and a recycler.');
+      if (typeof data === 'string') {
+        const parts = data.split(':');
+        if (parts.length === 2 && !isNaN(parseInt(parts[1], 10))) {
+          return parseInt(parts[1], 10);
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing data:', error);
+      setError('Error parsing QR code data.');
+    }
+    return null;
+  };
+
+  const handleTransferPlastic = async (retailerId) => {
+    try {
+      if (type1Quantity === 0 && type2Quantity === 0) {
+        setMessage('');
+        setError('Please specify the quantity of plastics to transfer.');
         return;
       }
 
-      const response = await axios.post('/api/transfer_retailer_to_recycler', {
-        plastic_id: selectedPlastic,
-        recycler_id: selectedRecycler,
+      // Check if a transfer is already in progress
+      if (isTransferring) {
+        return;
+      }
+
+      setIsTransferring(true); // Set transfer in progress
+      setMessage('Transferring plastics...');
+      setError('');
+
+      const response = await axios.post('/api/transfer_plastic/to_recycler', {
+        type1_quantity: type1Quantity,
+        type2_quantity: type2Quantity,
+        retailer_id: retailerId,
       });
 
       setMessage(response.data.message);
-      setSelectedPlastic('');
-      setSelectedRecycler('');
+      setError('');
+
+      setType1Quantity(0);
+      setType2Quantity(0);
     } catch (error) {
-      setMessage('Error transferring plastic.');
+      console.log(error);
+      setMessage('');
+      setError('Error transferring plastics. Please try again.');
+    } finally {
+      setIsTransferring(false);
     }
   };
 
+  const stopScanning = async () => {
+    try {
+      if (html5QrCodeRef.current) {
+        await html5QrCodeRef.current.stop();
+        html5QrCodeRef.current = null;
+      }
+    } catch (error) {
+      console.error('Error stopping QR code scanner:', error);
+    } finally {
+      setIsScanning(false);
+    }
+  };
+  
   return (
     <div className="min-h-screen bg-gray-100 p-8">
-      <h1 className="text-3xl font-bold mb-6">Transfer Plastic to Recycler</h1>
+      <h1 className="text-3xl font-bold mb-6">Transfer Plastics to Retailer</h1>
+
+      {isScanning && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50">
+          <div className="relative p-4 bg-white rounded-lg shadow-lg">
+            <button
+              onClick={stopScanning}
+              className="absolute top-2 right-2 text-black"
+              aria-label="Close QR Scanner"
+            >
+              X
+            </button>
+            <h2 className="text-xl font-bold mb-4">Scan Retailer QR Code</h2>
+            <div id="qr-code-scanner" style={{ width: '300px', height: '300px' }}></div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-xl font-semibold mb-4">Select Plastic</h2>
-        <select
-          value={selectedPlastic}
-          onChange={(e) => setSelectedPlastic(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded mb-4"
-        >
-          <option value="">Select Plastic</option>
-          {plastics.map(plastic => (
-            <option key={plastic.id} value={plastic.id}>
-              {plastic.id} - {new Date(plastic.manufactured_date).toLocaleDateString()}
-            </option>
-          ))}
-        </select>
+        <h2 className="text-xl font-semibold mb-4">Specify Quantities</h2>
+        <div className="mb-4">
+          <label htmlFor="type1-quantity" className="block text-sm font-medium text-gray-700">
+            Type 1 Plastic Quantity:
+          </label>
+          <input
+            type="number"
+            id="type1-quantity"
+            value={type1Quantity}
+            onChange={(e) => setType1Quantity(parseInt(e.target.value, 10) || 0)}
+            className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+          />
+        </div>
+        <div className="mb-4">
+          <label htmlFor="type2-quantity" className="block text-sm font-medium text-gray-700">
+            Type 2 Plastic Quantity:
+          </label>
+          <input
+            type="number"
+            id="type2-quantity"
+            value={type2Quantity}
+            onChange={(e) => setType2Quantity(parseInt(e.target.value, 10) || 0)}
+            className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+          />
+        </div>
 
-        <h2 className="text-xl font-semibold mb-4">Select Recycler</h2>
-        <select
-          value={selectedRecycler}
-          onChange={(e) => setSelectedRecycler(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded mb-4"
-        >
-          <option value="">Select Recycler</option>
-          {recyclers.map(recycler => (
-            <option key={recycler.id} value={recycler.id}>
-              {recycler.business_name} - {recycler.business_contact} - {recycler.business_address}
-            </option>
-          ))}
-        </select>
-
-        <button
-          onClick={handleTransferPlastic}
-          className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300"
-        >
-          Transfer Plastic
-        </button>
+        {(type1Quantity > 0 || type2Quantity > 0) && (
+          <button
+            onClick={() => setIsScanning(true)}
+            disabled={isTransferring || isScanning} // Disable button while transferring or scanning
+            className={`w-full ${isTransferring || isScanning ? 'bg-gray-400' : 'bg-blue-500'} text-white py-2 px-4 rounded-lg transition duration-300`}
+          >
+            {isTransferring ? 'Transferring...' : 'Scan Retailer QR Code'}
+          </button>
+        )}
 
         {message && (
           <div className="mt-4 text-center text-green-600">
             {message}
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-4 text-center text-red-600">
+            {error}
           </div>
         )}
       </div>
@@ -116,4 +213,4 @@ const TransferRetailertoRecycler = () => {
   );
 };
 
-export default TransferRetailertoRecycler;
+export default TransferManufacturertoRetailer;

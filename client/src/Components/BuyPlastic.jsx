@@ -30,6 +30,7 @@ const BuyPlastic = () => {
 
       const response = await axios.post('/api/buy_plastic', {
         plastic_id: selectedPlastic,
+        
         quantity: quantity,
       });
 

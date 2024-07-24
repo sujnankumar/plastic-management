@@ -70,62 +70,66 @@ const BuyRetailerPlastics = () => {
 
     return (
         <div className="container mx-auto p-4">
-            <h2 className="text-xl font-semibold mb-4">Buy Plastics from Retailer</h2>
-            {error && <p className="text-red-500">{error}</p>}
+            <h2 className="text-xl font-semibold mb-4 text-center">Buy Plastics from Retailer</h2>
+            {error && <p className="text-red-500 text-center">{error}</p>}
             <div className="flex justify-between space-x-4">
-                <div className="flex-1 p-4 border rounded-lg shadow-md">
-                    <h3 className="text-lg font-semibold">Type 1 Plastic</h3>
-                    <div className="flex items-center mt-4">
-                        <button
-                            onClick={() => decrementQuantity(1)}
-                            className="bg-gray-300 text-gray-800 px-2 py-1 rounded-l-md"
-                        >
-                            -
-                        </button>
-                        <input
-                            type="number"
-                            min="0"
-                            value={quantities[1] || 0}
-                            onChange={(e) => handleQuantityChange(1, e.target.value)}
-                            className="border-gray-300 text-center w-full border-t border-b"
-                        />
-                        <button
-                            onClick={() => incrementQuantity(1)}
-                            className="bg-gray-300 text-gray-800 px-2 py-1 rounded-r-md"
-                        >
-                            +
-                        </button>
+                <div className="flex-1 p-4 bg-green-100 border rounded-lg shadow-md">
+                    <h3 className="text-lg font-semibold text-center">Type 1 Plastic</h3>
+                    <div className="flex flex-col items-center mt-4">
+                        <div className="flex items-center">
+                            <button
+                                onClick={() => decrementQuantity(1)}
+                                className="bg-green-300 text-gray-800 px-4 py-2 rounded-l-md h-full"
+                            >
+                                -
+                            </button>
+                            <input
+                                type="number"
+                                min="0"
+                                value={quantities[1] || 0}
+                                onChange={(e) => handleQuantityChange(1, e.target.value)}
+                                className="border-gray-300 text-center w-16 border-t border-b mx-1 py-2"
+                            />
+                            <button
+                                onClick={() => incrementQuantity(1)}
+                                className="bg-green-300 text-gray-800 px-4 py-2 rounded-r-md h-full"
+                            >
+                                +
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div className="flex-1 p-4 border rounded-lg shadow-md">
-                    <h3 className="text-lg font-semibold">Type 2 Plastic</h3>
-                    <div className="flex items-center mt-4">
-                        <button
-                            onClick={() => decrementQuantity(2)}
-                            className="bg-gray-300 text-gray-800 px-2 py-1 rounded-l-md"
-                        >
-                            -
-                        </button>
-                        <input
-                            type="number"
-                            min="0"
-                            value={quantities[2] || 0}
-                            onChange={(e) => handleQuantityChange(2, e.target.value)}
-                            className="border-gray-300 text-center w-full border-t border-b"
-                        />
-                        <button
-                            onClick={() => incrementQuantity(2)}
-                            className="bg-gray-300 text-gray-800 px-2 py-1 rounded-r-md"
-                        >
-                            +
-                        </button>
+                <div className="flex-1 p-4 bg-green-100 border rounded-lg shadow-md">
+                    <h3 className="text-lg font-semibold text-center">Type 2 Plastic</h3>
+                    <div className="flex flex-col items-center mt-4">
+                        <div className="flex items-center">
+                            <button
+                                onClick={() => decrementQuantity(2)}
+                                className="bg-green-300 text-gray-800 px-4 py-2 rounded-l-md h-full"
+                            >
+                                -
+                            </button>
+                            <input
+                                type="number"
+                                min="0"
+                                value={quantities[2] || 0}
+                                onChange={(e) => handleQuantityChange(2, e.target.value)}
+                                className="border-gray-300 text-center w-16 border-t border-b mx-1 py-2"
+                            />
+                            <button
+                                onClick={() => incrementQuantity(2)}
+                                className="bg-green-300 text-gray-800 px-4 py-2 rounded-r-md h-full"
+                            >
+                                +
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
             <div className="mt-4 text-center">
                 <button
                     onClick={handleBuy}
-                    className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                    className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
                 >
                     Buy
                 </button>

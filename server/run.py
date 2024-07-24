@@ -6,11 +6,13 @@ from datetime import datetime
 def initialize_points():
     if not Points.query.first():
         db.session.add(Points(transaction_type='create', points_value=25))
-        db.session.add(Points(transaction_type='manufacturer_to_retailer', points_value=20))
+        db.session.add(Points(transaction_type='manufacturer_to_retailer', points_value=5))
         db.session.add(Points(transaction_type='retailer_from_manufacturer', points_value=15))
         db.session.add(Points(transaction_type='retailer_to_buyer', points_value=25))
         db.session.add(Points(transaction_type='buyer_to_retailer', points_value=15))
-        db.session.add(Points(transaction_type='retailer_to_recycler', points_value=20))
+        db.session.add(Points(transaction_type='retailer_to_recycler', points_value=5))
+        db.session.add(Points(transaction_type='recycler_from_retailer', points_value=20))
+        db.session.add(Points(transaction_type='recycle', points_value=20))
         db.session.commit()
 
 def create_admin_user():
@@ -26,7 +28,7 @@ def create_admin_user():
             contact_no='1111111111',
             gender='M',
             address='Admin Address',
-            dob=datetime(1990, 1, 1),  # Update with admin's date of birth
+            dob=datetime(1990, 1, 1),
             role='admin'
         )
         db.session.add(admin)

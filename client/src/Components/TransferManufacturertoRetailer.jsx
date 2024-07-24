@@ -5,10 +5,11 @@ import { Html5Qrcode } from 'html5-qrcode';
 const TransferManufacturertoRetailer = () => {
   const [manufacturerId, setManufacturerId] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [isTransferring, setIsTransferring] = useState(false); // New state for transfer in progress
   const [type1Quantity, setType1Quantity] = useState(0);
   const [type2Quantity, setType2Quantity] = useState(0);
   const [message, setMessage] = useState('');
-  const [error, setError] = useState(''); // State for errors
+  const [error, setError] = useState('');
   const html5QrCodeRef = useRef(null);
 
   useEffect(() => {
@@ -68,14 +69,14 @@ const TransferManufacturertoRetailer = () => {
         } catch (error) {
           console.error('Error starting QR code scanner:', error);
           setError('Error starting QR code scanner.');
-          stopScanning();  // Ensure scanning is stopped on error
+          stopScanning();
         }
       };
 
       startScanning();
 
       return () => {
-        stopScanning();  // Cleanup on component unmount or scanner state change
+        stopScanning();
       };
     }
   }, [isScanning]);
@@ -104,7 +105,12 @@ const TransferManufacturertoRetailer = () => {
         return;
       }
 
-      // Show a loading message while transferring
+      // Check if a transfer is already in progress
+      if (isTransferring) {
+        return;
+      }
+
+      setIsTransferring(true); // Set transfer in progress
       setMessage('Transferring plastics...');
       setError('');
 
@@ -114,12 +120,17 @@ const TransferManufacturertoRetailer = () => {
         retailer_id: retailerId,
       });
 
-      // Show success message
       setMessage(response.data.message);
-      setError('');  // Clear error if transfer is successful
+      setError('');
+
+      // Optionally, reset quantities after transfer
+      setType1Quantity(0);
+      setType2Quantity(0);
     } catch (error) {
       setMessage('');
       setError('Error transferring plastics. Please try again.');
+    } finally {
+      setIsTransferring(false); // Reset transfer state
     }
   };
 
@@ -127,12 +138,12 @@ const TransferManufacturertoRetailer = () => {
     try {
       if (html5QrCodeRef.current) {
         await html5QrCodeRef.current.stop();
-        html5QrCodeRef.current = null; // Clear reference to avoid issues
+        html5QrCodeRef.current = null;
       }
     } catch (error) {
       console.error('Error stopping QR code scanner:', error);
     } finally {
-      setIsScanning(false); // Update state to indicate scanning has stopped
+      setIsScanning(false);
     }
   };
 
@@ -186,9 +197,10 @@ const TransferManufacturertoRetailer = () => {
         {(type1Quantity > 0 || type2Quantity > 0) && (
           <button
             onClick={() => setIsScanning(true)}
-            className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300"
+            disabled={isTransferring} // Disable button while transferring
+            className={`w-full ${isTransferring ? 'bg-gray-400' : 'bg-blue-500'} text-white py-2 px-4 rounded-lg transition duration-300`}
           >
-            Scan Retailer QR Code
+            {isTransferring ? 'Transferring...' : 'Scan Retailer QR Code'}
           </button>
         )}
 
