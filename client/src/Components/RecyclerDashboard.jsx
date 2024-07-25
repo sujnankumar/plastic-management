@@ -174,7 +174,7 @@ const RecyclerDashboard = () => {
             )}
             {createdPlastic && showMessage && (
                 <div className="mt-4 transition-opacity duration-500 ease-in-out opacity-100">
-                    <h2 className="text-xl font-bold">Plastics Created</h2>
+                    <h2 className="text-xl font-bold">Plastics Recycled</h2>
                     <p>Type: {createdPlastic.type}</p>
                     <p>Cost: {createdPlastic.cost}</p>
                     <p>Quantity: {createdPlastic.quantity}</p>
@@ -182,7 +182,7 @@ const RecyclerDashboard = () => {
             )}
             {showPlastics && (
                 <div className="mt-4">
-                    <h2 className="text-xl font-bold">Plastics Created</h2>
+                    <h2 className="text-xl font-bold">Plastics Recycled</h2>
                     <ul>
                         {plastics.map((plastic) => (
                             <li key={plastic.id} className="mb-2">

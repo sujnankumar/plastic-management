@@ -24,6 +24,7 @@ import TransferRetailertoRecycler from "./Components/TransferRetailertoRecycler"
 import RetailerInventory from "./Components/RetailerInventory";
 import BuyRetailerPlastics from './Components/BuyRetailerPlastics'; 
 import RecyclerPlastics from "./Components/RecyclerPlastics";
+import Analytics from "./Components/Analytics";
 
 
 const ProtectedRoute = ({ Component, ...rest }) => {
@@ -131,6 +132,7 @@ function App() {
                     <Route path="/inventory" element={<ProtectedRoute Component={RetailerInventory} />} />
                     <Route path="/retailer/:retailerId/plastics" element={<ProtectedRoute Component={BuyRetailerPlastics} />} /> {/* Retailer Plastics Page */}
                     <Route path="/recycler_plastics" element={<ProtectedRoute Component={RecyclerPlastics} />} /> {/* Retailer Plastics Page */}
+                    <Route path="/analytics" element={<ProtectedRoute Component={Analytics} />} /> {/* Retailer Plastics Page */}
 
                     {user && user.role === 'admin' && (
                         <Route path="/validate_roles" element={<AdminRoute Component={ValidateRoles} />} />

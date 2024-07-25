@@ -239,12 +239,19 @@ def redeem_reward():
         )
         
         db.session.add(redeemed_reward)
+
+        redeemed_trans = Transaction(
+                user_id=user.id,
+                log=f'Redeemed Reward (Title: {reward_title})',
+                points=reward_points
+            )
+        
+        db.session.add(redeemed_trans)
         db.session.commit()
 
         return jsonify({"message": "Reward redeemed successfully!"}), 200
     else:
         return jsonify({"message": "Insufficient points or user not found!"}), 400
-
 
 @app.route('/api/buyers', methods=['GET'])
 @jwt_required()
@@ -1034,9 +1041,9 @@ def recycle_plastic():
             points_awarded *= 2
 
         recycle_plastic = Plastic.query.filter_by(recycler_id=recycler_id, type=plastic_type, status='recycler').limit(quantity).all()
-
+        print(recycle_plastic)
         for plastic in recycle_plastic:
-            plastic.recycler_id=recycler_id,
+            plastic.recycler_id=recycler_id
             plastic.status='recycled'
             db.session.commit()
 
@@ -1071,11 +1078,9 @@ def recycler_plastics(recycler_id):
             return jsonify({'error': 'Manufacturer not found'}), 404
         
         query = Plastic.query.filter_by(recycler_id=recycler.id, status="recycler")
-        
         plastics = query.order_by(Plastic.recycled_date.desc()).all()
         
-        print(plastics)
-        plastics_data = [
+        recycler_plastics_data = [
             {
                 'id': plastic.id,
                 'recycled_date': plastic.recycled_date.isoformat(),
@@ -1085,15 +1090,36 @@ def recycler_plastics(recycler_id):
             for plastic in plastics
         ]
 
-        count_type1 = sum(1 for plastic in plastics if plastic.type == 1)
-        count_type2 = sum(1 for plastic in plastics if plastic.type == 2)
+        recycler_count_type1 = sum(1 for plastic in plastics if plastic.type == 1)
+        recycler_count_type2 = sum(1 for plastic in plastics if plastic.type == 2)
+
+        query = Plastic.query.filter_by(recycler_id=recycler.id, status="recycled")
+        plastics = query.order_by(Plastic.recycled_date.desc()).all()
+
+        recycled_plastics_data = [
+            {
+                'id': plastic.id,
+                'recycled_date': plastic.recycled_date.isoformat(),
+                'type': plastic.type,
+                'cost': plastic.cost
+            }
+            for plastic in plastics
+        ]
+
+        recycled_count_type1 = sum(1 for plastic in plastics if plastic.type == 1)
+        recycled_count_type2 = sum(1 for plastic in plastics if plastic.type == 2)
 
         plastics_json = {
-            'count_data': [
-                {'id': 1, 'name': 'Type 1', 'count': count_type1},
-                {'id': 2, 'name': 'Type 2', 'count': count_type2}
+            'recycler_count_data': [
+                {'id': 1, 'name': 'Type 1', 'count': recycler_count_type1},
+                {'id': 2, 'name': 'Type 2', 'count': recycler_count_type2}
             ],
-            'plastics_data': plastics_data
+            'recycled_count_data': [
+                {'id': 1, 'name': 'Type 1', 'count': recycled_count_type1},
+                {'id': 2, 'name': 'Type 2', 'count': recycled_count_type2}
+            ],
+            'recycler_plastics_data': recycler_plastics_data,
+            'recycled_plastics_data': recycled_plastics_data
         }
 
         print(plastics_json)
@@ -1215,3 +1241,43 @@ def transfer_plastic_to_recycler():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@app.route('/api/leaderboard/buyers', methods=['GET'])
+def get_buyers_leaderboard():
+    buyers = User.query.filter_by(role='user').order_by(User.points.desc()).all()
+    leaderboard = [{'username': buyer.username, 'points': buyer.points} for buyer in buyers]
+    return jsonify(leaderboard)
+
+@app.route('/api/leaderboard/manufacturers', methods=['GET'])
+def get_manufacturers_leaderboard():
+    manufacturers = User.query.filter_by(role='manufacturer').order_by(User.points.desc()).all()
+    leaderboard = [{'username': manufacturer.username, 'points': manufacturer.points} for manufacturer in manufacturers]
+    return jsonify(leaderboard)
+
+@app.route('/api/leaderboard/retailers', methods=['GET'])
+def get_retailers_leaderboard():
+    retailers = User.query.filter_by(role='retailer').order_by(User.points.desc()).all()
+    leaderboard = [{'username': retailer.username, 'points': retailer.points} for retailer in retailers]
+    return jsonify(leaderboard)
+
+@app.route('/api/leaderboard/recyclers', methods=['GET'])
+def get_recyclers_leaderboard():
+    recyclers = User.query.filter_by(role='recycler').order_by(User.points.desc()).all()
+    leaderboard = [{'username': recycler.username, 'points': recycler.points} for recycler in recyclers]
+    return jsonify(leaderboard)
+
+@app.route('/api/user/points_usage/<int:user_id>', methods=['GET'])
+@jwt_required()
+def get_points_usage(user_id):
+    points_usage = RedeemedReward.query.filter_by(user_id=user_id).order_by(RedeemedReward.redeemed_at.asc()).all()
+    usage_data = [{'date': usage.redeemed_at.strftime('%Y-%m-%d'), 'points': usage.reward_points} for usage in points_usage]
+    print(usage_data)
+    return jsonify(usage_data)
+
+@app.route('/api/user/points_gained/<int:user_id>', methods=['GET'])
+@jwt_required()
+def get_points_gain(user_id):
+    points_usage = Transaction.query.filter_by(user_id=user_id).order_by(Transaction.date.asc()).all()
+    usage_data = [{'date': usage.date.strftime('%Y-%m-%d'), 'points': usage.points} for usage in points_usage]
+    print(usage_data)
+    return jsonify(usage_data)
