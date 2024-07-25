@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
-from datetime import datetime
+from datetime import datetime,timezone
 import pytz
 from app import db, login_manager
 
@@ -80,7 +80,6 @@ class Plastic(db.Model):
     retailers = db.relationship('PlasticRetailer', backref='plastic', lazy='dynamic')
     status = db.Column(db.String(20), default="manufacturer", nullable=False)
     buyers = db.relationship('PlasticBuyer', backref='plastic', lazy='dynamic')
-    transaction_id = db.Column(db.Integer, db.ForeignKey('transaction.id'), nullable=True)  # Changed to transaction_id
     type = db.Column(db.Integer, nullable=False)
     cost = db.Column(db.Integer, nullable=False)
     
@@ -131,7 +130,7 @@ class RedeemedReward(db.Model):
     reward_title = db.Column(db.String(255), nullable=False)
     reward_points = db.Column(db.Integer, nullable=False)
     img = db.Column(db.String(500), default='https://c8.alamy.com/comp/2A012NB/reward-label-reward-red-band-sign-reward-2A012NB.jpg',nullable=False)
-    redeemed_at = db.Column(db.DateTime, default=datetime.now(timezone.utc), nullable=False)
+    redeemed_at = db.Column(db.DateTime, default=get_ist_time)
     
 
 @login_manager.user_loader

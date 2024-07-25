@@ -37,6 +37,7 @@ const Profile = () => {
             const fetchRedeemedRewards = async () => {
                 try {
                     const response = await axios.get(`/api/redeemed_rewards`);
+                    console.log(response.data);
                     setRedeemedRewards(response.data);
                 } catch (error) {
                     console.error("Error fetching redeemed rewards:", error);
@@ -242,8 +243,8 @@ const Profile = () => {
                                 {transactions.length > 0 ? (
                                     transactions.map((transaction, index) => (
                                         <li key={index} className="bg-gray-100 p-3 rounded-lg" style={{ boxShadow: "0 8px 16px rgba(0, 128, 0, 0.2)" }}>
-                                            <p className="text-gray-700">{transaction.description}</p>
-                                            <p className="text-gray-600">Amount: {transaction.amount}</p>
+                                            <p className="text-gray-700">{transaction.log}</p>
+                                            <p className="text-gray-600">Points: {transaction.points}</p>
                                             <p className="text-gray-500 text-sm">Date: {transaction.date}</p>
                                         </li>
                                     ))

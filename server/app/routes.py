@@ -3,7 +3,7 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from sqlalchemy import func
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import app, db
-from app.models import User, Buyer, Retailer, Manufacturer, Recycler, UserRoleRequest, Plastic, PlasticRetailer, PlasticBuyer, Transaction, Points
+from app.models import User, Buyer, Retailer, Manufacturer, Recycler, UserRoleRequest, Plastic, PlasticRetailer, PlasticBuyer, Transaction, Points, RedeemedReward
 from datetime import datetime, timezone
 from dateutil import parser
 import qrcode
@@ -228,8 +228,9 @@ def redeem_reward():
 
     user = User.query.get(user_id)
     
+    print(user.points, reward_points)
     if user and user.points >= reward_points:
-        # Create a redeemed reward record
+
         redeemed_reward = RedeemedReward(
             user_id=user_id,
             reward_title=reward_title,
@@ -810,7 +811,9 @@ def get_transactions():
 def get_redeemed_rewards():
     current_user_username = get_jwt_identity()
     user = User.query.filter_by(username=current_user_username).first()
-    redeemed_rewards = RedeemedReward.query.filter_by(user_id=user.id).order_by(RedeemedReward.redeemed_at.desc()).all()
+    print(user.points)
+    redeemed_rewards = RedeemedReward.query.filter_by(user_id=user.id).all()
+    print(redeemed_rewards)
     return jsonify([{
         'reward_title': rr.reward_title,
         'reward_points': rr.reward_points,

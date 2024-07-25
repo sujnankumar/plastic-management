@@ -92,17 +92,26 @@ const Rewards = () => {
                 const updatedPoints = availablePoints - requiredPoints;
 
                 // Update points in backend
-                const response = await axios.put(`/api/points/${userData.id}`, {
+                const response1 = await axios.put(`/api/points/${userData.id}`, {
                     points: updatedPoints,
                 });
 
+                const response2 = await axios.post('/api/rewards/redeem', {
+                    user_id: userData.id,
+                    reward_title: reward.title,
+                    reward_points: reward.rewardPoints,
+                    reward_image: reward.image
+                });
+
                 // Handle response based on your application's needs
-                console.log(response.data);
+                console.log(response1.data);
+                console.log(response2.data);
+                if (response1.status === 200 && response2.status === 200){
+                    // Update local state or fetch user data again if necessary
+                    setAvailablePoints(updatedPoints);
 
-                // Update local state or fetch user data again if necessary
-                setAvailablePoints(updatedPoints);
-
-                alert(`Reward "${reward.title}" redeemed successfully!`);
+                    alert(`Reward "${reward.title}" redeemed successfully!`);
+                }
             } catch (error) {
                 console.error("Error redeeming reward:", error);
                 alert("Failed to redeem reward. Please try again later.");
