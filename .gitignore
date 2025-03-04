@@ -1,2 +1,4 @@
 server/migrations/
 server/venv/
+server/app/__pycache__/
+server/venv/Lib/site-packages/
